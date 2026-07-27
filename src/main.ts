@@ -1,24 +1,24 @@
+import Game from "./Game";
+import {getRequiredElement, getCanvasContext} from "./utils/dom";
+
 window.addEventListener('load', function() {
-  const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-  const ctx = canvas.getContext('2d');
+  const canvas = getRequiredElement("canvas", HTMLCanvasElement);
+
+  const context = getCanvasContext(canvas);
+
   canvas.width = 500;
   canvas.height = 500;
 
-  class Game {
-    width: number;
-    height: number;
+  const game = new Game({
+    width: canvas.width,
+    height: canvas.height,
+  });
 
-    constructor(width: number, height: number) {
-      this.width = width;
-      this.height = height;
-    }
-
-    update() {
-
-    }
-
-    draw() {
-
-    }
+  function animate(): void {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    game.update();
+    game.draw(context);
+    requestAnimationFrame(animate);
   }
+  animate();
 });
