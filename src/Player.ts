@@ -78,8 +78,9 @@ export default class Player {
     return this.positionY >= this.game.height - this.height - this.game.groundLevel;
   }
 
-  setState(state: number) {
+  setState(state: number, speed: number) {
     this.currentState = this.states[state];
+    this.game.speed = this.game.maxSpeed * speed;
     this.currentState.enter();
   }
 }
