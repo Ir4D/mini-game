@@ -60,7 +60,7 @@ export class Walking extends State {
   handleInput(input: string[]) {
     if (input.includes('ArrowDown')) {
       this.player.setState(states.STANDING, 0);
-    } else if (input.includes('ArrowUp')) {
+    } else if (input.includes('ArrowUp') || input.includes(' ')) {
       this.player.setState(states.JUMPING, 1);
     }
   }
@@ -75,7 +75,7 @@ export class Jumping extends State {
   }
 
   enter() {
-    if (this.player.onGround()) this.player.velocityY -= 5;
+    if (this.player.onGround()) this.player.velocityY -= 8.5;
     this.player.frameX = 3;
     this.player.maxFrame = 6;
     this.player.frameY = 3;

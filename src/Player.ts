@@ -13,9 +13,9 @@ export default class Player {
   frameX: number;
   frameY: number;
   maxFrame: number;
+  fps: number;
   frameInterval: number;
   frameTimer: number;
-  fps: number;
   speed: number;
   maxSpeed: number;
   states: (Standing | Walking | Jumping | Falling)[];
@@ -58,7 +58,10 @@ export default class Player {
     // vertical movement
     this.positionY += this.velocityY;
     if (!this.onGround()) this.velocityY += this.weight;
-    else this.velocityY = 0;
+    else {
+      this.velocityY = 0;
+      this.positionY = this.game.height - this.height - this.game.groundLevel;
+    };
 
     // sprite animation
     if (this.frameTimer > this.frameInterval) {
