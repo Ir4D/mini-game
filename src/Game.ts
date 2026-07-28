@@ -4,6 +4,7 @@ import { Background } from "./Background";
 import { FlyingEnemy, StandingEnemy } from "./Enemies";
 export { FlyingEnemy, StandingEnemy } from "./Enemies";
 import type { Enemy } from "./Enemies";
+import { UI } from "./UI";
 
 interface GameOptions {
   width: number;
@@ -22,6 +23,10 @@ export default class Game {
   enemies: Enemy[];
   enemyTimer: number;
   enemyInterval: number;
+  debug: boolean;
+  public score: number;
+  readonly fontColor: string;
+  UI: UI;
 
   constructor({ width, height }: GameOptions) {
     this.width = width;
@@ -31,10 +36,14 @@ export default class Game {
     this.maxSpeed = 2;
     this.background = new Background(this);
     this.player = new Player(this);
-    this.input = new InputHandler();
+    this.input = new InputHandler(this);
+    this.UI = new UI(this);
     this.enemies = [];
     this.enemyTimer = 0;
     this.enemyInterval = 1000;
+    this.debug = true;
+    this.score = 0;
+    this.fontColor = 'black';
   }
 
   update(deltaTime: number): void {
@@ -61,7 +70,8 @@ export default class Game {
     this.player.draw(context);
     this.enemies.forEach(enemy => {
       enemy.draw(context);
-    })
+    });
+    this.UI.draw(context);
   }
 
   addEnemy() {

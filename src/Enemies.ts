@@ -21,7 +21,7 @@ export abstract class Enemy {
     this.game = game;
     this.frameX = 0;
     this.frameY = 0;
-    this.fps = 20;
+    this.fps = 8;
     this.frameInterval = 1000 / this.fps;
     this.frameTimer = 0;
     this.markedForDeletion = false;
@@ -44,6 +44,7 @@ export abstract class Enemy {
   }
 
   draw(context: CanvasRenderingContext2D) {
+    if (this.game.debug) context.strokeRect(this.positionX, this.positionY, this.width, this.height);
     context.drawImage(this.image, this.frameX * this.width, 0, this.width, this.height, this.positionX, this.positionY, this.width, this.height);
   }
 }
@@ -67,10 +68,10 @@ export class FlyingEnemy extends Enemy {
     this.positionY = Math.random() * this.game.height * 0.5;
     this.speedX = Math.random() - 1;
     this.speedY = 0;
-    this.maxFrame = 5;
+    this.maxFrame = 2;
     this.image = document.getElementById("enemy_fly") as HTMLImageElement;
     this.angle = 0;
-    this.velocityAngle = Math.random() * 0.1 + 0.1;
+    this.velocityAngle = Math.random() * 0.05 + 0.05;
   }
 
   update(deltaTime: number) {
@@ -81,8 +82,8 @@ export class FlyingEnemy extends Enemy {
 }
 
 export class StandingEnemy extends Enemy {
-  readonly width: number = 160;
-  readonly height: number = 80;
+  readonly width: number = 78;
+  readonly height: number = 100;
 
   positionX: number;
   positionY: number;
@@ -94,7 +95,7 @@ export class StandingEnemy extends Enemy {
   constructor(game: Game) {
     super(game);
     this.positionX = this.game.width;
-    this.positionY = this.game.height - this.height - this.game.groundLevel - 10;
+    this.positionY = this.game.height - this.height - this.game.groundLevel;
     this.speedX = 0;
     this.speedY = 0;
     this.maxFrame = 1;

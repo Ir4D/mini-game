@@ -45,6 +45,7 @@ export default class Player {
   }
 
   update(input: string[], deltaTime: number): void {
+    this.checkCollision();
     this.currentState.handleInput(input);
 
     // horizontal movement
@@ -74,6 +75,7 @@ export default class Player {
   }
 
   draw(context: CanvasRenderingContext2D): void {
+    if (this.game.debug) context.strokeRect(this.positionX, this.positionY, this.width, this.height);
     context.drawImage(this.image, this.frameX * this.width, this.frameY * this.height, this.width, this.height, this.positionX, this.positionY, this.width, this.height);
   }
 
@@ -85,5 +87,21 @@ export default class Player {
     this.currentState = this.states[state];
     this.game.speed = this.game.maxSpeed * speed;
     this.currentState.enter();
+  }
+
+  checkCollision() {
+    this.game.enemies.forEach(enemy => {
+      if (
+        enemy.positionX < this.positionX + this.width &&
+        enemy.positionX + enemy.width > this.positionX &&
+        enemy.positionY < this.positionY + this.height &&
+        enemy.positionY + enemy.height > this.positionY
+      ) {
+        enemy.markedForDeletion = true;
+        this.game.score++;
+      } else {
+
+      }
+    })
   }
 }

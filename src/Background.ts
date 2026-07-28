@@ -46,7 +46,7 @@ export class Background {
 
   constructor(game: Game) {
     this.game = game;
-    this.width = 888;
+    this.width = 1200;
     this.height = 500;
     this.layer1image = document.getElementById("layer1") as HTMLImageElement;
     this.layer2image = document.getElementById("layer2") as HTMLImageElement;
