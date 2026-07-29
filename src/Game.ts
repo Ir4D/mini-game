@@ -6,6 +6,7 @@ export { FlyingEnemy, StandingEnemy } from "./Enemies";
 import type { Enemy } from "./Enemies";
 import type { Particle } from "./Particles";
 import { UI } from "./UI";
+import type { CollisionAnimation } from "./CollisionAnimation";
 
 interface GameOptions {
   width: number;
@@ -30,6 +31,7 @@ export default class Game {
   public score: number;
   readonly fontColor: string;
   UI: UI;
+  collisions: CollisionAnimation[];
 
   constructor({ width, height }: GameOptions) {
     this.width = width;
@@ -43,6 +45,7 @@ export default class Game {
     this.UI = new UI(this);
     this.enemies = [];
     this.particles = [];
+    this.collisions = [];
     this.enemyTimer = 0;
     this.enemyInterval = 1000;
     this.debug = true;
@@ -79,6 +82,12 @@ export default class Game {
     if (this.particles.length > this.maxParticles) {
       this.particles = this.particles.slice(0, this.maxParticles);
     }
+
+    // handle collision sprites
+    this.collisions.forEach((collision, index) => {
+      collision.update(deltaTime);
+      if (collision.markedForDeletion) this.collisions.splice(index, 1);
+    });
   }
 
   draw(context: CanvasRenderingContext2D): void {
@@ -89,6 +98,9 @@ export default class Game {
     });
     this.particles.forEach(particle => {
       particle.draw(context);
+    });
+    this.collisions.forEach(collision => {
+      collision.draw(context);
     });
     this.UI.draw(context);
   }

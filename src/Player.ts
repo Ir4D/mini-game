@@ -1,5 +1,6 @@
 import type Game from "./Game";
-import { Falling, Jumping, Standing, Walking, Rolling } from "./PlayerStates";
+import { Falling, Jumping, Standing, Walking, Rolling, Diving, Hit } from "./PlayerStates";
+import { CollisionAnimation } from "./CollisionAnimation";
 
 export default class Player {
   private readonly game: Game;
@@ -18,8 +19,8 @@ export default class Player {
   frameTimer: number;
   speed: number;
   maxSpeed: number;
-  states: (Standing | Walking | Jumping | Falling | Rolling)[];
-  currentState: Standing | Walking | Jumping | Falling | Rolling;
+  states: (Standing | Walking | Jumping | Falling | Rolling | Diving | Hit)[];
+  currentState: Standing | Walking | Jumping | Falling | Rolling | Diving | Hit;
 
   constructor(game: Game) {
     this.game = game;
@@ -38,7 +39,7 @@ export default class Player {
     this.frameTimer = 0;
     this.speed = 0;
     this.maxSpeed = 1;
-    this.states = [new Standing(this.game), new Walking(this.game), new Jumping(this.game), new Falling(this.game), new Rolling(this.game)];
+    this.states = [new Standing(this.game), new Walking(this.game), new Jumping(this.game), new Falling(this.game), new Rolling(this.game), new Diving(this.game), new Hit(this.game)];
     this.currentState = this.states[0];
   }
 
@@ -51,6 +52,8 @@ export default class Player {
     if (input.includes('ArrowRight'))this.speed = this.maxSpeed;
     else if (input.includes('ArrowLeft')) this.speed = -this.maxSpeed;
     else this.speed = 0;
+
+    // horizontal boundaries
     if (this.positionX < 0) this.positionX = 0;
     if (this.positionX > this.game.width - this.width) this.positionX = this.game.width - this.width;
 
@@ -59,8 +62,10 @@ export default class Player {
     if (!this.onGround()) this.velocityY += this.weight;
     else {
       this.velocityY = 0;
-      this.positionY = this.game.height - this.height - this.game.groundLevel;
     };
+
+    // vertical boundaries
+    if (this.positionY > this.game.height - this.height - this.game.groundLevel) this.positionY = this.game.height - this.height - this.game.groundLevel;
 
     // sprite animation
     if (this.frameTimer > this.frameInterval) {
@@ -96,7 +101,12 @@ export default class Player {
         enemy.positionY + enemy.height > this.positionY
       ) {
         enemy.markedForDeletion = true;
-        this.game.score++;
+        this.game.collisions.push(new CollisionAnimation(this.game, enemy.positionX + enemy.width * 0.5, enemy.positionY + enemy.height * 0.5));
+        if (this.currentState === this.states[4] || this.currentState === this.states[5]) {
+          this.game.score++;
+        } else {
+          this.setState(6, 0);
+        }
       }
     })
   }

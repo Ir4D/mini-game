@@ -1,6 +1,6 @@
 import type Player from "./Player";
 import type Game from "./Game";
-import { Dust, Fire } from "./Particles";
+import { Dust, Fire, Splash } from "./Particles";
 
 interface States {
   STANDING: number;
@@ -92,6 +92,8 @@ export class Jumping extends State {
       this.game.player.setState(states.FALLING, 1);
     } else if (input.includes('Enter')) {
       this.game.player.setState(states.ROLLING, 2);
+    } else if (input.includes('ArrowDown')) {
+      this.game.player.setState(states.DIVING, 0);
     }
   }
 }
@@ -110,6 +112,8 @@ export class Falling extends State {
   handleInput(input: string[]): void {
     if (this.game.player.onGround()) {
       this.game.player.setState(states.WALKING, 1);
+    } else if (input.includes('ArrowDown')) {
+      this.game.player.setState(states.DIVING, 0);
     }
   }
 }
@@ -135,6 +139,53 @@ export class Rolling extends State {
                 input.includes('Enter') && input.includes(' ') && this.game.player.onGround()
               ) {
       this.game.player.velocityY -= 8;
+    } else if (input.includes('ArrowDown')) {
+      this.game.player.setState(states.DIVING, 0);
     }
+  }
+}
+
+export class Diving extends State {
+  constructor(game: Game) {
+    super('DIVING', game);
+  }
+
+  enter(): void {
+    this.game.player.frameX = 0;
+    this.game.player.maxFrame = 15;
+    this.game.player.frameY = 4;
+    this.game.player.velocityY = 10;
+  }
+
+  handleInput(input: string[]): void {
+    this.game.particles.unshift(new Fire(this.game, this.game.player.positionX + this.game.player.width * 0.5, this.game.player.positionY + this.game.player.height * 0.5));
+    if (this.game.player.onGround()) {
+      this.game.player.setState(states.WALKING, 1);
+      for (let i = 0; i < 30; i++) {
+        this.game.particles.unshift(new Splash(this.game, this.game.player.positionX + this.game.player.width * 0.5, this.game.player.positionY + this.game.player.height));
+      }
+    } else if (input.includes('Enter') && this.game.player.onGround()) {
+      this.game.player.setState(states.ROLLING, 1);
+    } 
+  }
+}
+
+export class Hit extends State {
+  constructor(game: Game) {
+    super('HIT', game);
+  }
+
+  enter(): void {
+    this.game.player.frameX = 0;
+    this.game.player.maxFrame = 15;
+    this.game.player.frameY = 5;
+  }
+
+  handleInput(input: string[]): void {
+    if (this.game.player.frameX >= 15 && this.game.player.onGround()) {
+      this.game.player.setState(states.WALKING, 1);
+    } else if (this.game.player.frameX >= 10 && !this.game.player.onGround()) {
+      this.game.player.setState(states.FALLING, 1);
+    } 
   }
 }

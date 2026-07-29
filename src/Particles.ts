@@ -50,6 +50,37 @@ export class Dust extends Particle {
   }
 }
 
+export class Splash extends Particle{
+  positionX: number;
+  positionY: number;
+  size: number;
+  speedX: number;
+  speedY: number;
+  image: HTMLImageElement;
+  gravity: number;
+
+  constructor(game: Game, positionX: number, positionY: number) {
+    super(game);
+    this.size = Math.random() * 100 + 100;
+    this.positionX = positionX - this.size * 0.4;
+    this.positionY = positionY - this.size * 0.5;
+    this.speedX = Math.random() * 6 - 4;
+    this.speedY = Math.random() * 2 + 2;
+    this.gravity = 0;
+    this.image = document.getElementById("fire") as HTMLImageElement;
+  }
+
+  update(): void {
+    super.update();
+    this.gravity += 0.1;
+    this.positionY += this.gravity;
+  }
+
+  draw(context: CanvasRenderingContext2D): void {
+    context.drawImage(this.image, this.positionX, this.positionY, this.size, this.size);
+  }
+}
+
 export class Fire extends Particle {
   positionX: number;
   positionY: number;
