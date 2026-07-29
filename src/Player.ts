@@ -1,5 +1,5 @@
 import type Game from "./Game";
-import { Falling, Jumping, Standing, Walking } from "./PlayerStates";
+import { Falling, Jumping, Standing, Walking, Rolling } from "./PlayerStates";
 
 export default class Player {
   private readonly game: Game;
@@ -18,13 +18,13 @@ export default class Player {
   frameTimer: number;
   speed: number;
   maxSpeed: number;
-  states: (Standing | Walking | Jumping | Falling)[];
-  currentState: Standing | Walking | Jumping | Falling;
+  states: (Standing | Walking | Jumping | Falling | Rolling)[];
+  currentState: Standing | Walking | Jumping | Falling | Rolling;
 
   constructor(game: Game) {
     this.game = game;
     this.width = 64;
-    this.height = 92;
+    this.height = 76;
     this.positionX = 0;
     this.positionY = this.game.height - this.height - this.game.groundLevel;
     this.velocityY = 0;
@@ -38,10 +38,8 @@ export default class Player {
     this.frameTimer = 0;
     this.speed = 0;
     this.maxSpeed = 1;
-    this.states = [new Standing(this), new Walking(this), new Jumping(this), new Falling(this)];
+    this.states = [new Standing(this.game), new Walking(this.game), new Jumping(this.game), new Falling(this.game), new Rolling(this.game)];
     this.currentState = this.states[0];
-    this.currentState.enter();
-
   }
 
   update(input: string[], deltaTime: number): void {
@@ -79,17 +77,17 @@ export default class Player {
     context.drawImage(this.image, this.frameX * this.width, this.frameY * this.height, this.width, this.height, this.positionX, this.positionY, this.width, this.height);
   }
 
-  onGround(): Boolean {
+  onGround(): boolean {
     return this.positionY >= this.game.height - this.height - this.game.groundLevel;
   }
 
-  setState(state: number, speed: number) {
+  setState(state: number, speed: number): void {
     this.currentState = this.states[state];
     this.game.speed = this.game.maxSpeed * speed;
     this.currentState.enter();
   }
 
-  checkCollision() {
+  checkCollision(): void {
     this.game.enemies.forEach(enemy => {
       if (
         enemy.positionX < this.positionX + this.width &&
@@ -99,8 +97,6 @@ export default class Player {
       ) {
         enemy.markedForDeletion = true;
         this.game.score++;
-      } else {
-
       }
     })
   }

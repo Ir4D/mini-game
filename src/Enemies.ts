@@ -27,7 +27,7 @@ export abstract class Enemy {
     this.markedForDeletion = false;
   }
 
-  update(deltaTime: number) {
+  update(deltaTime: number): void {
     // movement
     this.positionX -= this.speedX + this.game.speed;
     this.positionY += this.speedY;
@@ -43,7 +43,7 @@ export abstract class Enemy {
     if (this.positionX + this.width < 0) this.markedForDeletion = true;
   }
 
-  draw(context: CanvasRenderingContext2D) {
+  draw(context: CanvasRenderingContext2D): void {
     if (this.game.debug) context.strokeRect(this.positionX, this.positionY, this.width, this.height);
     context.drawImage(this.image, this.frameX * this.width, 0, this.width, this.height, this.positionX, this.positionY, this.width, this.height);
   }
@@ -66,7 +66,7 @@ export class FlyingEnemy extends Enemy {
     super(game);
     this.positionX = this.game.width + Math.random() * this.game.width * 0.5;
     this.positionY = Math.random() * this.game.height * 0.5;
-    this.speedX = Math.random() - 1;
+    this.speedX = Math.random();
     this.speedY = 0;
     this.maxFrame = 2;
     this.image = document.getElementById("enemy_fly") as HTMLImageElement;
@@ -74,7 +74,7 @@ export class FlyingEnemy extends Enemy {
     this.velocityAngle = Math.random() * 0.05 + 0.05;
   }
 
-  update(deltaTime: number) {
+  update(deltaTime: number): void {
     super.update(deltaTime);
     this.angle += this.velocityAngle;
     this.positionY += Math.sin(this.angle);

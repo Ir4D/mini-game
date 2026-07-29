@@ -4,6 +4,7 @@ import { Background } from "./Background";
 import { FlyingEnemy, StandingEnemy } from "./Enemies";
 export { FlyingEnemy, StandingEnemy } from "./Enemies";
 import type { Enemy } from "./Enemies";
+import type { Particle } from "./Particles";
 import { UI } from "./UI";
 
 interface GameOptions {
@@ -21,6 +22,8 @@ export default class Game {
   public maxSpeed: number;
   background: Background;
   enemies: Enemy[];
+  particles: Particle[];
+  maxParticles: number;
   enemyTimer: number;
   enemyInterval: number;
   debug: boolean;
@@ -39,11 +42,15 @@ export default class Game {
     this.input = new InputHandler(this);
     this.UI = new UI(this);
     this.enemies = [];
+    this.particles = [];
     this.enemyTimer = 0;
     this.enemyInterval = 1000;
     this.debug = true;
     this.score = 0;
     this.fontColor = 'black';
+    this.player.currentState = this.player.states[0];
+    this.player.currentState.enter();
+    this.maxParticles = 50;
   }
 
   update(deltaTime: number): void {
@@ -63,6 +70,15 @@ export default class Game {
         this.enemies.splice(this.enemies.indexOf(enemy), 1);
       }
     })
+
+    // handle particles
+    this.particles.forEach((particle, index) => {
+      particle.update();
+      if (particle.markedForDeletion) this.particles.splice(index, 1);
+    })
+    if (this.particles.length > this.maxParticles) {
+      this.particles = this.particles.slice(0, this.maxParticles);
+    }
   }
 
   draw(context: CanvasRenderingContext2D): void {
@@ -71,10 +87,13 @@ export default class Game {
     this.enemies.forEach(enemy => {
       enemy.draw(context);
     });
+    this.particles.forEach(particle => {
+      particle.draw(context);
+    });
     this.UI.draw(context);
   }
 
-  addEnemy() {
+  addEnemy(): void {
     if (this.speed > 0 && Math.random() < 0.5) {
       this.enemies.push(new StandingEnemy(this));
     }
