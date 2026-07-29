@@ -1,6 +1,7 @@
 import type Game from "./Game";
 import { Falling, Jumping, Standing, Walking, Rolling, Diving, Hit } from "./PlayerStates";
 import { CollisionAnimation } from "./CollisionAnimation";
+import { FloatingMessages } from "./FloatingMessages";
 
 export default class Player {
   private readonly game: Game;
@@ -103,6 +104,7 @@ export default class Player {
         this.game.collisions.push(new CollisionAnimation(this.game, enemy.positionX + enemy.width * 0.5, enemy.positionY + enemy.height * 0.5));
         if (this.currentState === this.states[4] || this.currentState === this.states[5]) {
           this.game.score++;
+          this.game.floatingMessages.push(new FloatingMessages('+1', enemy.positionX, enemy.positionY, 130, 45));
         } else {
           this.setState(6, 0);
           this.game.lives--;

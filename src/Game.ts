@@ -7,6 +7,7 @@ import type { Enemy } from "./Enemies";
 import type { Particle } from "./Particles";
 import { UI } from "./UI";
 import type { CollisionAnimation } from "./CollisionAnimation";
+import type { FloatingMessages } from "./FloatingMessages";
 
 interface GameOptions {
   width: number;
@@ -24,6 +25,7 @@ export default class Game {
   background: Background;
   enemies: Enemy[];
   particles: Particle[];
+  floatingMessages: FloatingMessages[];
   maxParticles: number;
   enemyTimer: number;
   enemyInterval: number;
@@ -49,6 +51,7 @@ export default class Game {
     this.enemies = [];
     this.particles = [];
     this.collisions = [];
+    this.floatingMessages = [];
     this.enemyTimer = 0;
     this.enemyInterval = 1000;
     this.score = 0;
@@ -77,15 +80,16 @@ export default class Game {
     }
     this.enemies.forEach(enemy => {
       enemy.update(deltaTime);
-      if (enemy.markedForDeletion) {
-        this.enemies.splice(this.enemies.indexOf(enemy), 1);
-      }
+    })
+
+    // handle messages
+    this.floatingMessages.forEach(message => {
+      message.update();
     })
 
     // handle particles
     this.particles.forEach((particle, index) => {
       particle.update();
-      if (particle.markedForDeletion) this.particles.splice(index, 1);
     })
     if (this.particles.length > this.maxParticles) {
       this.particles.length = this.maxParticles;
@@ -94,8 +98,11 @@ export default class Game {
     // handle collision sprites
     this.collisions.forEach((collision, index) => {
       collision.update(deltaTime);
-      if (collision.markedForDeletion) this.collisions.splice(index, 1);
     });
+    this.enemies = this.enemies.filter(enemy => !enemy.markedForDeletion);
+    this.particles = this.particles.filter(particle => !particle.markedForDeletion);
+    this.collisions = this.collisions.filter(collision => !collision.markedForDeletion);
+    this.floatingMessages = this.floatingMessages.filter(message => !message.markedForDeletion);
   }
 
   draw(context: CanvasRenderingContext2D): void {
@@ -111,6 +118,9 @@ export default class Game {
       collision.draw(context);
     });
     this.UI.draw(context);
+    this.floatingMessages.forEach(message => {
+      message.draw(context);
+    })
   }
 
   addEnemy(): void {
