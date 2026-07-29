@@ -32,6 +32,9 @@ export default class Game {
   readonly fontColor: string;
   UI: UI;
   collisions: CollisionAnimation[];
+  time: number;
+  maxTime: number;
+  gameOver: boolean;
 
   constructor({ width, height }: GameOptions) {
     this.width = width;
@@ -51,12 +54,17 @@ export default class Game {
     this.debug = true;
     this.score = 0;
     this.fontColor = 'black';
+    this.time = 0;
+    this.maxTime = 10000;
+    this.gameOver = false;
     this.player.currentState = this.player.states[0];
     this.player.currentState.enter();
     this.maxParticles = 50;
   }
 
   update(deltaTime: number): void {
+    this.time += deltaTime;
+    if (this.time > this.maxTime) this.gameOver = true;
     this.background.update();
     this.player.update(this.input.keys, deltaTime);
 
