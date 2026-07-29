@@ -139,7 +139,7 @@ export class Rolling extends State {
                 input.includes('Enter') && input.includes(' ') && this.game.player.onGround()
               ) {
       this.game.player.velocityY -= 8;
-    } else if (input.includes('ArrowDown')) {
+    } else if (input.includes('ArrowDown') && !this.game.player.onGround()) {
       this.game.player.setState(states.DIVING, 0);
     }
   }

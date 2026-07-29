@@ -27,7 +27,6 @@ export default class Game {
   maxParticles: number;
   enemyTimer: number;
   enemyInterval: number;
-  debug: boolean;
   public score: number;
   readonly fontColor: string;
   UI: UI;
@@ -35,6 +34,7 @@ export default class Game {
   time: number;
   maxTime: number;
   gameOver: boolean;
+  lives: number;
 
   constructor({ width, height }: GameOptions) {
     this.width = width;
@@ -51,12 +51,12 @@ export default class Game {
     this.collisions = [];
     this.enemyTimer = 0;
     this.enemyInterval = 1000;
-    this.debug = true;
     this.score = 0;
     this.fontColor = 'black';
     this.time = 0;
     this.maxTime = 10000;
     this.gameOver = false;
+    this.lives = 5;
     this.player.currentState = this.player.states[0];
     this.player.currentState.enter();
     this.maxParticles = 50;
@@ -88,7 +88,7 @@ export default class Game {
       if (particle.markedForDeletion) this.particles.splice(index, 1);
     })
     if (this.particles.length > this.maxParticles) {
-      this.particles = this.particles.slice(0, this.maxParticles);
+      this.particles.length = this.maxParticles;
     }
 
     // handle collision sprites
