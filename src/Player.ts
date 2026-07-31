@@ -1,6 +1,6 @@
 import type Game from "./Game";
-import { Falling, Jumping, Standing, Walking, Rolling, Diving, Hit } from "./PlayerStates";
-import { CollisionAnimation } from "./CollisionAnimation";
+import { Falling, Jumping, Standing, Walking, Rolling, Diving, Hit, Attack } from "./PlayerStates";
+import { CollisionAnimation } from "./SpriteAnimation";
 import { FloatingMessages } from "./FloatingMessages";
 
 export default class Player {
@@ -20,8 +20,8 @@ export default class Player {
   frameTimer: number;
   speed: number;
   maxSpeed: number;
-  states: (Standing | Walking | Jumping | Falling | Rolling | Diving | Hit)[];
-  currentState: Standing | Walking | Jumping | Falling | Rolling | Diving | Hit;
+  states: (Standing | Walking | Jumping | Falling | Rolling | Diving | Hit | Attack)[];
+  currentState: Standing | Walking | Jumping | Falling | Rolling | Diving | Hit | Attack;
 
   constructor(game: Game) {
     this.game = game;
@@ -40,7 +40,7 @@ export default class Player {
     this.frameTimer = 0;
     this.speed = 0;
     this.maxSpeed = 1;
-    this.states = [new Standing(this.game), new Walking(this.game), new Jumping(this.game), new Falling(this.game), new Rolling(this.game), new Diving(this.game), new Hit(this.game)];
+    this.states = [new Standing(this.game), new Walking(this.game), new Jumping(this.game), new Falling(this.game), new Rolling(this.game), new Diving(this.game), new Hit(this.game), new Attack(this.game)];
     this.currentState = this.states[0];
   }
 
@@ -102,15 +102,15 @@ export default class Player {
       ) {
         enemy.markedForDeletion = true;
         this.game.collisions.push(new CollisionAnimation(this.game, enemy.positionX + enemy.width * 0.5, enemy.positionY + enemy.height * 0.5));
-        if (this.currentState === this.states[4] || this.currentState === this.states[5]) {
+        if (this.currentState === this.states[4] || this.currentState === this.states[5] || this.currentState === this.states[7]) {
           this.game.score++;
           this.game.floatingMessages.push(new FloatingMessages('+1', enemy.positionX, enemy.positionY, 130, 45));
         } else {
           this.setState(6, 0);
-          this.game.lives--;
-          if (this.game.lives <= 0) {
-            this.game.gameOver = true;
-          }
+          // this.game.lives--;
+          // if (this.game.lives <= 0) {
+          //   this.game.gameOver = true;
+          // }
         }
       }
     })

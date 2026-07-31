@@ -49,7 +49,7 @@ export abstract class Enemy {
 }
 
 export class FlyingEnemy extends Enemy {
-  readonly width: number = 89;
+  readonly width: number = 89.1;
   readonly height: number = 73;
 
   positionX: number;
@@ -67,7 +67,7 @@ export class FlyingEnemy extends Enemy {
     this.positionY = Math.random() * this.game.height * 0.5;
     this.speedX = Math.random();
     this.speedY = 0;
-    this.maxFrame = 2;
+    this.maxFrame = 15;
     this.image = document.getElementById("enemy_fly") as HTMLImageElement;
     this.angle = 0;
     this.velocityAngle = Math.random() * 0.05 + 0.05;
@@ -97,7 +97,7 @@ export class StandingEnemy extends Enemy {
     this.positionY = this.game.height - this.height - this.game.groundLevel;
     this.speedX = 0;
     this.speedY = 0;
-    this.maxFrame = 1;
+    this.maxFrame = 8;
     this.image = document.getElementById("enemy_stand") as HTMLImageElement;
   }
 }

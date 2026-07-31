@@ -1,4 +1,3 @@
-import type Player from "./Player";
 import type Game from "./Game";
 import { Dust, Fire, Splash } from "./Particles";
 
@@ -10,6 +9,7 @@ interface States {
   ROLLING: number;
   DIVING: number;
   HIT: number;
+  ATTACK: number;
 }
 
 const states: States = {
@@ -19,7 +19,8 @@ const states: States = {
   FALLING: 3,
   ROLLING: 4,
   DIVING: 5,
-  HIT: 6
+  HIT: 6,
+  ATTACK: 7,
 }
 
 class State {
@@ -46,8 +47,8 @@ export class Standing extends State {
   handleInput(input: string[]): void {
     if (input.includes('ArrowLeft') || input.includes('ArrowRight')) {
       this.game.player.setState(states.WALKING, 1);
-    } else if (input.includes('Enter')) {
-      this.game.player.setState(states.ROLLING, 2);
+    } else if (input.includes('Enter') && this.game.attackReady) {
+      this.game.player.setState(states.ATTACK, 1);
     }
   }
 }
@@ -69,8 +70,8 @@ export class Walking extends State {
       this.game.player.setState(states.STANDING, 0);
     } else if (input.includes('ArrowUp') || input.includes(' ')) {
       this.game.player.setState(states.JUMPING, 1);
-    } else if (input.includes('Enter')) {
-      this.game.player.setState(states.ROLLING, 2);
+    } else if (input.includes('Enter') && this.game.attackReady) {
+      this.game.player.setState(states.ATTACK, 1);
     }
   }
 }
@@ -90,8 +91,8 @@ export class Jumping extends State {
   handleInput(input: string[]): void {
     if (this.game.player.velocityY > this.game.player.weight) {
       this.game.player.setState(states.FALLING, 1);
-    } else if (input.includes('Enter')) {
-      this.game.player.setState(states.ROLLING, 2);
+    } else if (input.includes('Enter') && this.game.attackReady) {
+      this.game.player.setState(states.ATTACK, 1);
     } else if (input.includes('ArrowDown')) {
       this.game.player.setState(states.DIVING, 0);
     }
@@ -164,8 +165,8 @@ export class Diving extends State {
       for (let i = 0; i < 30; i++) {
         this.game.particles.unshift(new Splash(this.game, this.game.player.positionX + this.game.player.width * 0.5, this.game.player.positionY + this.game.player.height));
       }
-    } else if (input.includes('Enter') && this.game.player.onGround()) {
-      this.game.player.setState(states.ROLLING, 1);
+    } else if (input.includes('Enter') && this.game.player.onGround() && this.game.attackReady) {
+      this.game.player.setState(states.ATTACK, 1);
     } 
   }
 }
@@ -177,15 +178,43 @@ export class Hit extends State {
 
   enter(): void {
     this.game.player.frameX = 0;
-    this.game.player.maxFrame = 15;
-    this.game.player.frameY = 5;
+    this.game.player.maxFrame = 11;
+    this.game.player.frameY = 6;
   }
 
-  handleInput(input: string[]): void {
-    if (this.game.player.frameX >= 15 && this.game.player.onGround()) {
+  handleInput(): void {
+    if (this.game.player.frameX >= 11 && this.game.player.onGround()) {
       this.game.player.setState(states.WALKING, 1);
     } else if (this.game.player.frameX >= 10 && !this.game.player.onGround()) {
       this.game.player.setState(states.FALLING, 1);
     } 
+  }
+}
+
+export class Attack extends State {
+  
+  constructor(game: Game) {
+    super('ATTACK', game);
+  }
+
+  enter(): void {
+    this.game.player.frameX = 0;
+    this.game.player.maxFrame = 8;
+    this.game.player.frameY = 0;
+    this.game.triggerAttack();
+  }
+  
+  handleInput(input: string[]): void {
+    if (!input.includes('Enter') && this.game.player.onGround()) {
+      this.game.player.setState(states.WALKING, 1);
+    } else if (!input.includes('Enter') && !this.game.player.onGround()) {
+      this.game.player.setState(states.FALLING, 1);
+    } else if ( input.includes('Enter') && input.includes('ArrowUp') && this.game.player.onGround() || 
+                input.includes('Enter') && input.includes(' ') && this.game.player.onGround()
+              ) {
+      this.game.player.velocityY -= 8;
+    } else if (input.includes('ArrowDown') && !this.game.player.onGround()) {
+      this.game.player.setState(states.DIVING, 0);
+    }
   }
 }
