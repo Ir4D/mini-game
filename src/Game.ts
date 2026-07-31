@@ -3,12 +3,13 @@ import InputHandler from "./InputHandler";
 import { Background } from "./Background";
 import { FlyingEnemy, StandingEnemy } from "./Enemies";
 import { Attack } from "./Attack";
-export { FlyingEnemy, StandingEnemy } from "./Enemies";
 import type { Enemy } from "./Enemies";
 import type { Particle } from "./Particles";
 import { UI } from "./UI";
-import { CollisionAnimation, RemovalAnimation } from "./SpriteAnimation";
+import { CollisionAnimation, RemovalAnimation, CollectionAnimation } from "./SpriteAnimation";
 import { FloatingMessages } from "./FloatingMessages";
+import type { Collectible } from "./Collectible";
+import { Breadcrumb } from "./Collectible";
 
 interface GameOptions {
   width: number;
@@ -31,6 +32,8 @@ export default class Game {
   enemyTimer: number;
   enemyInterval: number;
   public score: number;
+  public breadcrumbs: number;
+  win: number;
   readonly fontColor: string;
   UI: UI;
   collisions: CollisionAnimation[];
@@ -39,10 +42,13 @@ export default class Game {
   attackTimer: number;
   attackCooldown: number;
   time: number;
-  maxTime: number;
   gameOver: boolean;
   lives: number;
   maxEnemies: number;
+  collectibles: Collectible[];
+  collectibleTimer: number;
+  collectibleInterval: number;
+  collections: CollectionAnimation[];
 
   constructor({ width, height }: GameOptions) {
     this.width = width;
@@ -55,19 +61,24 @@ export default class Game {
     this.input = new InputHandler(this);
     this.UI = new UI(this);
     this.enemies = [];
+    this.enemyTimer = 0;
+    this.enemyInterval = 3000;
     this.particles = [];
     this.collisions = [];
     this.attacks = [];
+    this.collectibles = [];
+    this.collectibleTimer = 0;
+    this.collectibleInterval = 3000;
+    this.collections = [];
     this.attackReady = true;
     this.attackTimer = 0;
     this.attackCooldown = 3000;
     this.floatingMessages = [];
-    this.enemyTimer = 0;
-    this.enemyInterval = 3000;
     this.score = 0;
+    this.breadcrumbs = 0;
+    this.win = 5;
     this.fontColor = 'black';
     this.time = 0;
-    this.maxTime = 10000;
     this.gameOver = false;
     this.lives = 5;
     this.player.currentState = this.player.states[0];
@@ -78,9 +89,9 @@ export default class Game {
 
   update(deltaTime: number): void {
     this.time += deltaTime;
-    // if (this.time > this.maxTime) this.gameOver = true;
     this.background.update();
     this.player.update(this.input.keys, deltaTime);
+    this.checkCollisions();
 
     if (!this.attackReady) {
       this.attackTimer += deltaTime;
@@ -113,6 +124,20 @@ export default class Game {
       this.particles.length = this.maxParticles;
     }
 
+    // handle collectibles
+    if (this.collectibleTimer > this.collectibleInterval) {
+      this.addCollectible();
+      this.collectibleTimer = 0;
+    } else {
+      this.collectibleTimer += deltaTime;
+    }
+    this.collectibles.forEach(collectible => {
+      collectible.update(deltaTime);
+    })
+    this.collections.forEach(collection => {
+      collection.update(deltaTime);
+    })
+
     // handle attack sprites
     this.attacks.forEach((attack) => {
       attack.update(deltaTime);
@@ -127,12 +152,7 @@ export default class Game {
     this.attacks.forEach((attack) => {
       this.enemies.forEach((enemy) => {
         if (enemy.markedForDeletion) return;
-        if (
-          enemy.positionX < attack.positionX + attack.width &&
-          enemy.positionX + enemy.width > attack.positionX &&
-          enemy.positionY < attack.positionY + attack.height &&
-          enemy.positionY + enemy.height > attack.positionY
-        ) {
+        if (this.isColliding(attack, enemy)) {
           enemy.markedForDeletion = true;
           this.collisions.push(new RemovalAnimation(this, enemy.positionX + enemy.width * 0.5, enemy.positionY));
           this.score++;
@@ -141,6 +161,8 @@ export default class Game {
       });
     });
     this.enemies = this.enemies.filter(enemy => !enemy.markedForDeletion);
+    this.collectibles = this.collectibles.filter(collectible => !collectible.markedForDeletion);
+    this.collections = this.collections.filter(collection => !collection.markedForDeletion);
     this.particles = this.particles.filter(particle => !particle.markedForDeletion);
     this.attacks = this.attacks.filter(attack => !attack.markedForDeletion);
     this.collisions = this.collisions.filter(collision => !collision.markedForDeletion);
@@ -152,6 +174,12 @@ export default class Game {
     this.player.draw(context);
     this.enemies.forEach(enemy => {
       enemy.draw(context);
+    });
+    this.collectibles.forEach(collectible => {
+      collectible.draw(context);
+    });
+    this.collections.forEach(collection => {
+      collection.draw(context);
     });
     this.particles.forEach(particle => {
       particle.draw(context);
@@ -175,6 +203,67 @@ export default class Game {
     if (this.enemies.length <= this.maxEnemies) {
       this.enemies.push(new FlyingEnemy(this));
     }
+  }
+
+  addCollectible(): void {
+    if (this.speed > 0 && Math.random() < 0.5) {
+      this.collectibles.push(new Breadcrumb(this));
+    }
+  }
+
+  private isColliding(a: { positionX: number; positionY: number; width: number; height: number }, b: { positionX: number; positionY: number; width: number; height: number }): boolean {
+    return (
+      a.positionX < b.positionX + b.width &&
+      a.positionX + a.width > b.positionX &&
+      a.positionY < b.positionY + b.height &&
+      a.positionY + a.height > b.positionY
+    );
+  }
+
+  checkCollisions(): void {
+    this.collectibles.forEach((collectible) => {
+      if (this.isColliding(this.player, collectible)) {
+        collectible.markedForDeletion = true;
+        this.breadcrumbs++;
+        this.score++;
+        this.collections.push(
+          new CollectionAnimation(
+            this,
+            collectible.positionX + collectible.width * 0.5,
+            collectible.positionY + collectible.height * 0.5
+          )
+        );
+        if (this.breadcrumbs >= this.win) {
+          this.gameOver = true;
+        }
+      }
+    });
+
+    this.enemies.forEach((enemy) => {
+      if (enemy.markedForDeletion) return;
+      if (this.isColliding(this.player, enemy)) {
+        enemy.markedForDeletion = true;
+        this.collisions.push(
+          new CollisionAnimation(
+            this,
+            enemy.positionX + enemy.width * 0.5,
+            enemy.positionY + enemy.height * 0.5
+          )
+        );
+        if (this.player.currentState === this.player.states[7]) {
+          this.score++;
+          this.floatingMessages.push(
+            new FloatingMessages('+1', enemy.positionX, enemy.positionY, 130, 45)
+          );
+        } else {
+          this.player.setState(6, 0);
+          this.lives--;
+          if (this.lives <= 0) {
+            this.gameOver = true;
+          }
+        }
+      }
+    });
   }
 
   triggerAttack(): void {

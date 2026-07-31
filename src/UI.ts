@@ -28,19 +28,22 @@ export class UI {
     // score
     context.fillText('Score: ' + this.game.score, 20, 50);
 
-    // timer
+    // breadcrumbs
     context.font = this.fontSize * 0.8 + 'px ' + this.fontFamily;
-    context.fillText('Time: ' + (this.game.time * 0.001).toFixed(1), 20, 80);
+    context.fillText('Breadcrumbs: ' + this.game.breadcrumbs + '/' + this.game.win, 20, 80)
+
+    // timer
+    context.fillText('Time: ' + (this.game.time * 0.001).toFixed(1) + 's', 20, 110);
 
     // lives
     for (let i = 0; i < this.game.lives; i++) {
-      context.drawImage(this.livesImage, 30 * i + 20, 90, 25, 25);
+      context.drawImage(this.livesImage, 30 * i + 20, 120, 25, 25);
     }
 
     // attacks: prominent icon + ring cooldown indicator
     const iconSize = 48;
     const iconX = 20;
-    const iconY = 130;
+    const iconY = 160;
     // icon background circle
     const centerX = iconX + iconSize * 0.5;
     const centerY = iconY + iconSize * 0.5;
@@ -106,7 +109,7 @@ export class UI {
     if (this.game.gameOver) {
       context.textAlign = 'center';
       context.font = this.fontSize * 2 + 'px ' + this.fontFamily;
-      if (this.game.score > 5) {
+      if (this.game.breadcrumbs === this.game.win) {
         context.fillText('The game is over!', this.game.width * 0.5, this.game.height * 0.5 - 30);
         context.font = this.fontSize * 1.5 + 'px ' + this.fontFamily;
         context.fillText('You won!', this.game.width * 0.5, this.game.height * 0.5 + 30);

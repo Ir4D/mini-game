@@ -1,7 +1,5 @@
 import type Game from "./Game";
 import { Falling, Jumping, Standing, Walking, Rolling, Diving, Hit, Attack } from "./PlayerStates";
-import { CollisionAnimation } from "./SpriteAnimation";
-import { FloatingMessages } from "./FloatingMessages";
 
 export default class Player {
   private readonly game: Game;
@@ -45,7 +43,6 @@ export default class Player {
   }
 
   update(input: string[], deltaTime: number): void {
-    this.checkCollision();
     this.currentState.handleInput(input);
 
     // horizontal movement
@@ -90,29 +87,5 @@ export default class Player {
     this.currentState = this.states[state];
     this.game.speed = this.game.maxSpeed * speed;
     this.currentState.enter();
-  }
-
-  checkCollision(): void {
-    this.game.enemies.forEach(enemy => {
-      if (
-        enemy.positionX < this.positionX + this.width &&
-        enemy.positionX + enemy.width > this.positionX &&
-        enemy.positionY < this.positionY + this.height &&
-        enemy.positionY + enemy.height > this.positionY
-      ) {
-        enemy.markedForDeletion = true;
-        this.game.collisions.push(new CollisionAnimation(this.game, enemy.positionX + enemy.width * 0.5, enemy.positionY + enemy.height * 0.5));
-        if (this.currentState === this.states[4] || this.currentState === this.states[5] || this.currentState === this.states[7]) {
-          this.game.score++;
-          this.game.floatingMessages.push(new FloatingMessages('+1', enemy.positionX, enemy.positionY, 130, 45));
-        } else {
-          this.setState(6, 0);
-          // this.game.lives--;
-          // if (this.game.lives <= 0) {
-          //   this.game.gameOver = true;
-          // }
-        }
-      }
-    })
   }
 }

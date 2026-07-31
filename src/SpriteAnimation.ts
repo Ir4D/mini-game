@@ -25,8 +25,7 @@ export class SpriteAnimation {
     maxFrame: number,
     positionX: number,
     positionY: number,
-    sizeModifier?: number,
-    fps?: number
+    sizeModifier?: number
   ) {
     this.game = game;
     this.image = document.getElementById(imageId) as HTMLImageElement;
@@ -40,7 +39,7 @@ export class SpriteAnimation {
     this.frameX = 0;
     this.maxFrame = maxFrame;
     this.markedForDeletion = false;
-    this.fps = typeof fps === 'number' ? fps : Math.random() * 10 + 5;
+    this.fps = 15;
     this.frameInterval = 1000 / this.fps;
     this.frameTimer = 0;
   }
@@ -79,5 +78,11 @@ export class CollisionAnimation extends SpriteAnimation {
 export class RemovalAnimation extends SpriteAnimation {
   constructor(game: Game, positionX: number, positionY: number) {
     super(game, 'steam', 64, 46, 8, positionX, positionY, 2);
+  }
+}
+
+export class CollectionAnimation extends SpriteAnimation {
+  constructor(game: Game, positionX: number, positionY: number) {
+    super(game, 'stars', 64, 65, 7, positionX, positionY, 1);
   }
 }
