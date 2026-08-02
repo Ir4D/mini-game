@@ -1,5 +1,5 @@
 import type Game from "./Game";
-import { Falling, Jumping, Standing, Walking, Rolling, Diving, Hit, Attack } from "./PlayerStates";
+import { Falling, Jumping, Standing, Walking, Rolling, Hit, Attack } from "./PlayerStates";
 
 export default class Player {
   private readonly game: Game;
@@ -8,7 +8,6 @@ export default class Player {
   positionX: number;
   positionY: number;
   velocityY: number;
-  weight: number;
   image: HTMLImageElement;
   frameX: number;
   frameY: number;
@@ -18,8 +17,13 @@ export default class Player {
   frameTimer: number;
   speed: number;
   maxSpeed: number;
-  states: (Standing | Walking | Jumping | Falling | Rolling | Diving | Hit | Attack)[];
-  currentState: Standing | Walking | Jumping | Falling | Rolling | Diving | Hit | Attack;
+  states: (Standing | Walking | Jumping | Falling | Rolling | Hit | Attack)[];
+  currentState: Standing | Walking | Jumping | Falling | Rolling | Hit | Attack;
+  jumpCount: number;
+  maxJumps: number;
+  jumpVelocity: number;
+  jumpKeyJustPressed: boolean;
+  private prevInput: string[];
 
   constructor(game: Game) {
     this.game = game;
@@ -28,7 +32,6 @@ export default class Player {
     this.positionX = 0;
     this.positionY = this.game.height - this.height - this.game.groundLevel;
     this.velocityY = 0;
-    this.weight = 0.1;
     this.image = document.getElementById("player") as HTMLImageElement;
     this.frameX = 0;
     this.frameY = 0;
@@ -38,17 +41,26 @@ export default class Player {
     this.frameTimer = 0;
     this.speed = 0;
     this.maxSpeed = 1;
-    this.states = [new Standing(this.game), new Walking(this.game), new Jumping(this.game), new Falling(this.game), new Rolling(this.game), new Diving(this.game), new Hit(this.game), new Attack(this.game)];
+    this.states = [new Standing(this.game), new Walking(this.game), new Jumping(this.game), new Falling(this.game), new Rolling(this.game), new Hit(this.game), new Attack(this.game)];
     this.currentState = this.states[0];
+    this.jumpCount = 0;
+    this.maxJumps = 2;
+    this.jumpVelocity = Math.sqrt(this.game.gravity * (this.game.height - this.game.groundLevel - this.height));
+    this.jumpKeyJustPressed = false;
+    this.prevInput = [];
+
   }
 
   update(input: string[], deltaTime: number): void {
+    const jumpKeyDown = input.includes('ArrowUp') || input.includes(' ');
+    const jumpKeyWasDown = this.prevInput.includes('ArrowUp') || this.prevInput.includes(' ');
+    this.jumpKeyJustPressed = jumpKeyDown && !jumpKeyWasDown;
     this.currentState.handleInput(input);
 
     // horizontal movement
     this.positionX += this.speed;
-    if (input.includes('ArrowRight') && this.currentState !== this.states[6])this.speed = this.maxSpeed;
-    else if (input.includes('ArrowLeft') && this.currentState !== this.states[6]) this.speed = -this.maxSpeed;
+    if (input.includes('ArrowRight') && this.currentState !== this.states[5])this.speed = this.maxSpeed;
+    else if (input.includes('ArrowLeft') && this.currentState !== this.states[5]) this.speed = -this.maxSpeed;
     else this.speed = 0;
 
     // horizontal boundaries
@@ -57,13 +69,21 @@ export default class Player {
 
     // vertical movement
     this.positionY += this.velocityY;
-    if (!this.onGround()) this.velocityY += this.weight;
-    else {
+    if (!this.onGround()) {
+      this.velocityY += this.game.gravity;
+    } else {
       this.velocityY = 0;
-    };
+    }
 
     // vertical boundaries
-    if (this.positionY > this.game.height - this.height - this.game.groundLevel) this.positionY = this.game.height - this.height - this.game.groundLevel;
+    if (this.positionY > this.game.height - this.height - this.game.groundLevel) {
+      this.positionY = this.game.height - this.height - this.game.groundLevel;
+    }
+
+    if (this.positionY < 0) {
+      this.positionY = 0;
+      this.velocityY = 0; 
+    }
 
     // sprite animation
     if (this.frameTimer > this.frameInterval) {
@@ -73,6 +93,8 @@ export default class Player {
     } else {
       this.frameTimer += deltaTime;
     }
+
+    this.prevInput = [...input];
   }
 
   draw(context: CanvasRenderingContext2D): void {

@@ -49,11 +49,13 @@ export default class Game {
   collectibleTimer: number;
   collectibleInterval: number;
   collections: CollectionAnimation[];
+  gravity: number;
 
   constructor({ width, height }: GameOptions) {
     this.width = width;
     this.height = height;
     this.groundLevel = 50;
+    this.gravity = 0.1;
     this.speed = 0;
     this.maxSpeed = 2;
     this.background = new Background(this);
@@ -250,17 +252,17 @@ export default class Game {
             enemy.positionY + enemy.height * 0.5
           )
         );
-        if (this.player.currentState === this.player.states[7]) {
+        if (this.player.currentState === this.player.states[6]) {
           this.score++;
           this.floatingMessages.push(
             new FloatingMessages('+1', enemy.positionX, enemy.positionY, 130, 45)
           );
         } else {
-          this.player.setState(6, 0);
-          this.lives--;
-          if (this.lives <= 0) {
-            this.gameOver = true;
-          }
+          this.player.setState(5, 0);
+          // this.lives--;
+          // if (this.lives <= 0) {
+          //   this.gameOver = true;
+          // }
         }
       }
     });
