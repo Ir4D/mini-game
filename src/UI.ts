@@ -1,11 +1,11 @@
 import type Game from "./Game";
 
 export class UI {
-  game: Game;
-  fontSize: number;
-  fontFamily: string;
-  livesImage: HTMLImageElement;
-  attackIconElem: HTMLImageElement;
+  private readonly game: Game;
+  readonly fontSize: number;
+  readonly fontFamily: string;
+  readonly livesImage: HTMLImageElement;
+  readonly attackIconElem: HTMLImageElement;
 
   constructor(game: Game) {
     this.game = game;
@@ -16,6 +16,16 @@ export class UI {
   }
 
   draw(context: CanvasRenderingContext2D): void {
+    if (!this.game.start) {
+      this.drawStartScreen(context);
+      return;
+    }
+
+    if (this.game.gameOver) {
+      this.drawGameOverScreen(context);
+      return;
+    }
+
     context.save();
     context.shadowOffsetX = 1;
     context.shadowOffsetY = 1;
@@ -105,20 +115,45 @@ export class UI {
     }
     context.restore();
 
-    // game over message
-    if (this.game.gameOver) {
-      context.textAlign = 'center';
-      context.font = this.fontSize * 2 + 'px ' + this.fontFamily;
-      if (this.game.breadcrumbs === this.game.win) {
-        context.fillText('The game is over!', this.game.width * 0.5, this.game.height * 0.5 - 30);
-        context.font = this.fontSize * 1.5 + 'px ' + this.fontFamily;
-        context.fillText('You won!', this.game.width * 0.5, this.game.height * 0.5 + 30);
-      } else {
-        context.fillText('The game is over!', this.game.width * 0.5, this.game.height * 0.5 - 30);
-        context.font = this.fontSize * 1.5 + 'px ' + this.fontFamily;
-        context.fillText('You lost :(', this.game.width * 0.5, this.game.height * 0.5 + 30);
-      }
-    }
+    context.restore();
+  }
+
+  drawStartScreen(context: CanvasRenderingContext2D): void {
+    context.save();
+
+    context.fillStyle = 'rgba(255, 255, 255, 0.25)';
+    context.fillRect(0, 0, this.game.width, this.game.height);
+
+    context.fillStyle = '#49351f';
+    context.font = 'bold 34px Nunito';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+
+    context.fillText(
+      'Help the little duckling find its way back to Mom!',
+      this.game.width * 0.5,
+      this.game.height * 0.4
+    );
+
+    context.restore();
+  }
+
+  drawGameOverScreen(context: CanvasRenderingContext2D): void {
+    context.save();
+
+    context.fillStyle = 'rgba(0, 0, 0, 0.45)';
+    context.fillRect(0, 0, this.game.width, this.game.height);
+
+    context.fillStyle = '#fff7e6';
+    context.font = 'bold 42px Nunito';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillText(this.game.gameWon ? 'You Won!' : 'Game Over', this.game.width * 0.5, this.game.height * 0.33);
+
+    context.font = 'bold 24px Nunito';
+    context.fillText(this.game.gameWon ? 'You helped the duckling find the way home!' : 'You lost all your lives...', this.game.width * 0.5, this.game.height * 0.42);
+    context.fillText(`Score: ${this.game.score}`, this.game.width * 0.5, this.game.height * 0.48);
+
     context.restore();
   }
 }

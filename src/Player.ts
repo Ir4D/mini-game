@@ -3,25 +3,25 @@ import { Falling, Jumping, Standing, Walking, Rolling, Hit, Attack } from "./Pla
 
 export default class Player {
   private readonly game: Game;
-  width: number;
-  height: number;
+  readonly width: number;
+  readonly height: number;
   positionX: number;
   positionY: number;
   velocityY: number;
-  image: HTMLImageElement;
+  readonly image: HTMLImageElement;
   frameX: number;
   frameY: number;
   maxFrame: number;
-  fps: number;
-  frameInterval: number;
+  readonly fps: number;
+  readonly frameInterval: number;
   frameTimer: number;
   speed: number;
-  maxSpeed: number;
-  states: (Standing | Walking | Jumping | Falling | Rolling | Hit | Attack)[];
+  readonly maxSpeed: number;
+  readonly states: (Standing | Walking | Jumping | Falling | Rolling | Hit | Attack)[];
   currentState: Standing | Walking | Jumping | Falling | Rolling | Hit | Attack;
   jumpCount: number;
-  maxJumps: number;
-  jumpVelocity: number;
+  readonly maxJumps: number;
+  readonly jumpVelocity: number;
   jumpKeyJustPressed: boolean;
   private prevInput: string[];
 
@@ -79,7 +79,6 @@ export default class Player {
     if (this.positionY > this.game.height - this.height - this.game.groundLevel) {
       this.positionY = this.game.height - this.height - this.game.groundLevel;
     }
-
     if (this.positionY < 0) {
       this.positionY = 0;
       this.velocityY = 0; 

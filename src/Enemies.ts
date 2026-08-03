@@ -3,8 +3,8 @@ import type Game from "./Game";
 export abstract class Enemy {
   frameX: number;
   frameY: number;
-  fps: number;
-  frameInterval: number;
+  readonly fps: number;
+  readonly frameInterval: number;
   frameTimer: number;
   markedForDeletion: boolean;
   protected readonly game: Game;

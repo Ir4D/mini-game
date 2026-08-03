@@ -1,20 +1,20 @@
 import type Game from "./Game";
 
 export class SpriteAnimation {
-  game: Game;
-  image: HTMLImageElement;
-  spriteWidth: number;
-  spriteHeight: number;
-  sizeModifier: number;
+  protected readonly game: Game;
+  protected readonly image: HTMLImageElement;
+  protected readonly spriteWidth: number;
+  protected readonly spriteHeight: number;
+  protected readonly sizeModifier: number;
   width: number;
   height: number;
   positionX: number;
   positionY: number;
   frameX: number;
-  maxFrame: number;
+  readonly maxFrame: number;
   markedForDeletion: boolean;
-  fps: number;
-  frameInterval: number;
+  readonly fps: number;
+  readonly frameInterval: number;
   frameTimer: number;
 
   constructor(

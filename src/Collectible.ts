@@ -1,11 +1,11 @@
 import Game from "./Game";
 
 export abstract class Collectible {
-  game: Game;
+  protected readonly game: Game;
   frameX: number;
   frameY: number;
-  fps: number;
-  frameInterval: number;
+  readonly fps: number;
+  readonly frameInterval: number;
   frameTimer: number;
   markedForDeletion: boolean;
   abstract readonly width: number;

@@ -1,19 +1,47 @@
 import Player from "./Player";
 import InputHandler from "./InputHandler";
 import { Background } from "./Background";
-import { FlyingEnemy, StandingEnemy } from "./Enemies";
 import { Attack } from "./Attack";
 import type { Enemy } from "./Enemies";
 import type { Particle } from "./Particles";
-import { UI } from "./UI";
 import { CollisionAnimation, RemovalAnimation, CollectionAnimation } from "./SpriteAnimation";
 import { FloatingMessages } from "./FloatingMessages";
 import type { Collectible } from "./Collectible";
-import { Breadcrumb } from "./Collectible";
+import StartButton from "./StartButton";
+import { Spawner } from "./Spawner";
+import { UI } from "./UI";
 
 interface GameOptions {
   width: number;
   height: number;
+}
+
+interface GameConfig {
+  groundLevel: number;
+  gravity: number;
+  maxSpeed: number;
+  enemyInterval: number;
+  collectibleInterval: number;
+  attackCooldown: number;
+  win: number;
+  maxParticles: number;
+  maxEnemies: number;
+  fontColor: string;
+}
+
+interface GameState {
+  speed: number;
+  score: number;
+  breadcrumbs: number;
+  time: number;
+  gameOver: boolean;
+  gameWon: boolean;
+  lives: number;
+  enemyTimer: number;
+  collectibleTimer: number;
+  attackReady: boolean;
+  attackTimer: number;
+  start: boolean;
 }
 
 export default class Game {
@@ -21,93 +49,148 @@ export default class Game {
   readonly height: number;
   readonly player: Player;
   readonly input: InputHandler;
-  readonly groundLevel: number;
-  public speed: number;
-  public maxSpeed: number;
-  background: Background;
+  readonly config: GameConfig;
+  readonly background: Background;
+  readonly startButton: StartButton;
+  readonly UI: UI;
+  readonly spawner: Spawner;
   enemies: Enemy[];
   particles: Particle[];
   floatingMessages: FloatingMessages[];
-  maxParticles: number;
-  enemyTimer: number;
-  enemyInterval: number;
-  public score: number;
-  public breadcrumbs: number;
-  win: number;
-  readonly fontColor: string;
-  UI: UI;
   collisions: CollisionAnimation[];
   attacks: Attack[];
-  attackReady: boolean;
-  attackTimer: number;
-  attackCooldown: number;
-  time: number;
-  gameOver: boolean;
-  lives: number;
-  maxEnemies: number;
   collectibles: Collectible[];
-  collectibleTimer: number;
-  collectibleInterval: number;
   collections: CollectionAnimation[];
-  gravity: number;
+  pointerX: number;
+  pointerY: number;
+  private state: GameState;
+
+  get speed(): number { return this.state.speed; }
+  set speed(value: number) { this.state.speed = value; }
+  get maxSpeed(): number { return this.config.maxSpeed; }
+  get score(): number { return this.state.score; }
+  set score(value: number) { this.state.score = value; }
+  get breadcrumbs(): number { return this.state.breadcrumbs; }
+  set breadcrumbs(value: number) { this.state.breadcrumbs = value; }
+  get time(): number { return this.state.time; }
+  set time(value: number) { this.state.time = value; }
+  get gameOver(): boolean { return this.state.gameOver; }
+  set gameOver(value: boolean) { this.state.gameOver = value; }
+  get gameWon(): boolean { return this.state.gameWon; }
+  set gameWon(value: boolean) { this.state.gameWon = value; }
+  get lives(): number { return this.state.lives; }
+  set lives(value: number) { this.state.lives = value; }
+  get enemyTimer(): number { return this.state.enemyTimer; }
+  set enemyTimer(value: number) { this.state.enemyTimer = value; }
+  get collectibleTimer(): number { return this.state.collectibleTimer; }
+  set collectibleTimer(value: number) { this.state.collectibleTimer = value; }
+  get attackReady(): boolean { return this.state.attackReady; }
+  set attackReady(value: boolean) { this.state.attackReady = value; }
+  get attackTimer(): number { return this.state.attackTimer; }
+  set attackTimer(value: number) { this.state.attackTimer = value; }
+  get start(): boolean { return this.state.start; }
+  set start(value: boolean) { this.state.start = value; }
+  get attackCooldown(): number { return this.config.attackCooldown; }
+  get win(): number { return this.config.win; }
+  get maxParticles(): number { return this.config.maxParticles; }
+  get maxEnemies(): number { return this.config.maxEnemies; }
+  get gravity(): number { return this.config.gravity; }
+  get groundLevel(): number { return this.config.groundLevel; }
+  get fontColor(): string { return this.config.fontColor; }
 
   constructor({ width, height }: GameOptions) {
     this.width = width;
     this.height = height;
-    this.groundLevel = 50;
-    this.gravity = 0.1;
-    this.speed = 0;
-    this.maxSpeed = 2;
+    this.config = {
+      groundLevel: 50,
+      gravity: 0.1,
+      maxSpeed: 2,
+      enemyInterval: 3000,
+      collectibleInterval: 3000,
+      attackCooldown: 3000,
+      win: 5,
+      maxParticles: 50,
+      maxEnemies: 4,
+      fontColor: '#49351f',
+    };
     this.background = new Background(this);
     this.player = new Player(this);
     this.input = new InputHandler(this);
     this.UI = new UI(this);
     this.enemies = [];
-    this.enemyTimer = 0;
-    this.enemyInterval = 3000;
     this.particles = [];
     this.collisions = [];
     this.attacks = [];
     this.collectibles = [];
-    this.collectibleTimer = 0;
-    this.collectibleInterval = 3000;
     this.collections = [];
-    this.attackReady = true;
-    this.attackTimer = 0;
-    this.attackCooldown = 3000;
     this.floatingMessages = [];
-    this.score = 0;
-    this.breadcrumbs = 0;
-    this.win = 5;
-    this.fontColor = 'black';
-    this.time = 0;
-    this.gameOver = false;
-    this.lives = 5;
+    this.startButton = new StartButton(this);
+    this.spawner = new Spawner(this);
+    this.pointerX = 0;
+    this.pointerY = 0;
+    this.state = this.createInitialState();
     this.player.currentState = this.player.states[0];
     this.player.currentState.enter();
-    this.maxParticles = 50;
-    this.maxEnemies = 4;
+    this.resetGameState();
+  }
+
+  private createInitialState(): GameState {
+    return {
+      speed: 0,
+      score: 0,
+      breadcrumbs: 0,
+      time: 0,
+      gameOver: false,
+      gameWon: false,
+      lives: 5,
+      enemyTimer: 0,
+      collectibleTimer: 0,
+      attackReady: true,
+      attackTimer: 0,
+      start: false,
+    };
   }
 
   update(deltaTime: number): void {
-    this.time += deltaTime;
+    this.state.time += deltaTime;
+
+    if (!this.state.start) {
+      this.startButton.setPosition(this.width * 0.5 - 220 * 0.5, this.height * 0.68);
+      this.startButton.setLabel("Start Game");
+      this.startButton.setPointer(this.pointerX, this.pointerY);
+      this.startButton.update(deltaTime);
+      if (this.input.keys.includes("Enter") || this.input.keys.includes(" ")) {
+        this.startGame();
+        this.input.keys = this.input.keys.filter((key) => key !== "Enter" && key !== " ");
+      }
+      return;
+    }
+
+    if (this.state.gameOver) {
+      this.startButton.setPosition(this.width * 0.5 - 220 * 0.5, this.height * 0.72);
+      this.startButton.setLabel("Start again");
+      this.startButton.setPointer(this.pointerX, this.pointerY);
+      this.startButton.update(deltaTime);
+      return;
+    }
+
     this.background.update();
     this.player.update(this.input.keys, deltaTime);
     this.checkCollisions();
 
-    if (!this.attackReady) {
-      this.attackTimer += deltaTime;
-      if (this.attackTimer >= this.attackCooldown) {
-        this.attackReady = true;
+    if (!this.state.attackReady) {
+      this.state.attackTimer += deltaTime;
+      if (this.state.attackTimer >= this.config.attackCooldown) {
+        this.state.attackReady = true;
       }
     }
 
     // handle enemies
-    if (this.enemyTimer > this.enemyInterval) {
-      this.addEnemy();
-      this.enemyTimer = 0;
+    if (this.state.enemyTimer > this.config.enemyInterval) {
+      this.spawner.spawnEnemy();
+      this.state.enemyTimer = 0;
     } else {
-      this.enemyTimer += deltaTime;
+      this.state.enemyTimer += deltaTime;
     }
     this.enemies.forEach(enemy => {
       enemy.update(deltaTime);
@@ -122,16 +205,16 @@ export default class Game {
     this.particles.forEach((particle) => {
       particle.update();
     })
-    if (this.particles.length > this.maxParticles) {
-      this.particles.length = this.maxParticles;
+    if (this.particles.length > this.config.maxParticles) {
+      this.particles.length = this.config.maxParticles;
     }
 
     // handle collectibles
-    if (this.collectibleTimer > this.collectibleInterval) {
-      this.addCollectible();
-      this.collectibleTimer = 0;
+    if (this.state.collectibleTimer > this.config.collectibleInterval) {
+      this.spawner.spawnCollectible();
+      this.state.collectibleTimer = 0;
     } else {
-      this.collectibleTimer += deltaTime;
+      this.state.collectibleTimer += deltaTime;
     }
     this.collectibles.forEach(collectible => {
       collectible.update(deltaTime);
@@ -157,7 +240,7 @@ export default class Game {
         if (this.isColliding(attack, enemy)) {
           enemy.markedForDeletion = true;
           this.collisions.push(new RemovalAnimation(this, enemy.positionX + enemy.width * 0.5, enemy.positionY));
-          this.score++;
+          this.state.score++;
           this.floatingMessages.push(new FloatingMessages('+1', enemy.positionX, enemy.positionY, 130, 45));
         }
       });
@@ -173,6 +256,19 @@ export default class Game {
 
   draw(context: CanvasRenderingContext2D): void {
     this.background.draw(context);
+
+    if (!this.state.start) {
+      this.UI.drawStartScreen(context);
+      this.startButton.draw(context);
+      return;
+    }
+
+    if (this.state.gameOver) {
+      this.UI.drawGameOverScreen(context);
+      this.startButton.draw(context);
+      return;
+    }
+
     this.player.draw(context);
     this.enemies.forEach(enemy => {
       enemy.draw(context);
@@ -195,21 +291,60 @@ export default class Game {
     this.UI.draw(context);
     this.floatingMessages.forEach(message => {
       message.draw(context);
-    })
+    });
   }
 
-  addEnemy(): void {
-    if (this.speed > 0 && Math.random() < 0.5) {
-      this.enemies.push(new StandingEnemy(this));
-    }
-    if (this.enemies.length <= this.maxEnemies) {
-      this.enemies.push(new FlyingEnemy(this));
-    }
+  private resetGameState(): void {
+    this.state = this.createInitialState();
+
+    this.clearArrays(
+      this.enemies,
+      this.particles,
+      this.floatingMessages,
+      this.attacks,
+      this.collisions,
+      this.collectibles,
+      this.collections
+    );
+
+    this.resetPlayerState();
   }
 
-  addCollectible(): void {
-    if (this.speed > 0 && Math.random() < 0.5) {
-      this.collectibles.push(new Breadcrumb(this));
+  private clearArrays(...arrays: Array<unknown[]>): void {
+    arrays.forEach((array) => {
+      array.length = 0;
+    });
+  }
+
+  private resetPlayerState(): void {
+    this.player.positionX = 0;
+    this.player.positionY = this.height - this.player.height - this.config.groundLevel;
+    this.player.velocityY = 0;
+    this.player.speed = 0;
+    this.player.frameX = 0;
+    this.player.frameTimer = 0;
+    this.player.currentState = this.player.states[0];
+    this.player.currentState.enter();
+  }
+
+  startGame(): void {
+    this.resetGameState();
+    this.state.start = true;
+  }
+
+  handlePointerMove(x: number, y: number): void {
+    this.pointerX = x;
+    this.pointerY = y;
+  }
+
+  isHoveringStartButton(): boolean {
+    return (!this.state.start || this.state.gameOver) && this.startButton.isClicked(this.pointerX, this.pointerY);
+  }
+
+  handlePointerDown(x: number, y: number): void {
+    this.handlePointerMove(x, y);
+    if ((!this.state.start || this.state.gameOver) && this.startButton.isClicked(x, y)) {
+      this.startGame();
     }
   }
 
@@ -226,8 +361,8 @@ export default class Game {
     this.collectibles.forEach((collectible) => {
       if (this.isColliding(this.player, collectible)) {
         collectible.markedForDeletion = true;
-        this.breadcrumbs++;
-        this.score++;
+        this.state.breadcrumbs++;
+        this.state.score++;
         this.collections.push(
           new CollectionAnimation(
             this,
@@ -235,8 +370,9 @@ export default class Game {
             collectible.positionY + collectible.height * 0.5
           )
         );
-        if (this.breadcrumbs >= this.win) {
-          this.gameOver = true;
+        if (this.state.breadcrumbs >= this.config.win) {
+          this.state.gameWon = true;
+          this.state.gameOver = true;
         }
       }
     });
@@ -253,25 +389,26 @@ export default class Game {
           )
         );
         if (this.player.currentState === this.player.states[6]) {
-          this.score++;
+          this.state.score++;
           this.floatingMessages.push(
             new FloatingMessages('+1', enemy.positionX, enemy.positionY, 130, 45)
           );
         } else {
           this.player.setState(5, 0);
-          // this.lives--;
-          // if (this.lives <= 0) {
-          //   this.gameOver = true;
-          // }
+          this.state.lives--;
+          if (this.state.lives <= 0) {
+            this.state.gameWon = false;
+            this.state.gameOver = true;
+          }
         }
       }
     });
   }
 
   triggerAttack(): void {
-    if (!this.attackReady) return;
+    if (!this.state.attackReady) return;
     this.attacks.push(new Attack(this));
-    this.attackReady = false;
-    this.attackTimer = 0;
+    this.state.attackReady = false;
+    this.state.attackTimer = 0;
   }
 }

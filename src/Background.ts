@@ -1,11 +1,11 @@
 import type Game from "./Game";
 
 class Layer {
-  game: Game;
-  width: number;
-  height: number;
-  speedModifier: number;
-  image: HTMLImageElement;
+  private readonly game: Game;
+  readonly width: number;
+  readonly height: number;
+  readonly speedModifier: number;
+  readonly image: HTMLImageElement;
   positionX: number;
   positionY: number;
 
@@ -31,18 +31,18 @@ class Layer {
 }
 
 export class Background {
-  game: Game;
-  width: number;
-  height: number;
-  layer1image: HTMLImageElement;
-  layer2image: HTMLImageElement;
-  layer3image: HTMLImageElement;
-  layer4image: HTMLImageElement;
-  layer1: Layer;
-  layer2: Layer;
-  layer3: Layer;
-  layer4: Layer;
-  backgroundLayers: Layer[];
+  private readonly game: Game;
+  readonly width: number;
+  readonly height: number;
+  readonly layer1image: HTMLImageElement;
+  readonly layer2image: HTMLImageElement;
+  readonly layer3image: HTMLImageElement;
+  readonly layer4image: HTMLImageElement;
+  readonly layer1: Layer;
+  readonly layer2: Layer;
+  readonly layer3: Layer;
+  readonly layer4: Layer;
+  readonly backgroundLayers: Layer[];
 
   constructor(game: Game) {
     this.game = game;
