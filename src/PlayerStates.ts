@@ -9,6 +9,7 @@ interface States {
   ROLLING: number;
   HIT: number;
   ATTACK: number;
+  DISTRACT: number;
 }
 
 const states: States = {
@@ -19,6 +20,7 @@ const states: States = {
   ROLLING: 4,
   HIT: 5,
   ATTACK: 6,
+  DISTRACT: 7,
 }
 
 class State {
@@ -193,5 +195,20 @@ export class Attack extends State {
               ) {
       this.game.player.velocityY -= 8;
     }
+  }
+}
+
+export class Distract extends State {
+  constructor(game: Game) {
+    super('DISTRACT', game);
+  }
+
+  enter(): void {
+    this.game.player.frameX = 0;
+    this.game.player.maxFrame = 15;
+    this.game.player.frameY = 7;
+  }
+
+  handleInput(): void {
   }
 }

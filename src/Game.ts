@@ -7,9 +7,10 @@ import type { Particle } from "./Particles";
 import { CollisionAnimation, RemovalAnimation, CollectionAnimation } from "./SpriteAnimation";
 import { FloatingMessages } from "./FloatingMessages";
 import type { Collectible } from "./Collectible";
-import StartButton from "./StartButton";
+import Button from "./Button";
 import { Spawner } from "./Spawner";
 import { UI } from "./UI";
+import IntroScene from "./IntroScene";
 
 interface GameOptions {
   width: number;
@@ -29,19 +30,20 @@ interface GameConfig {
   fontColor: string;
 }
 
+type GameScreen = 'menu' | 'intro' | 'playing' | 'gameOver';
+
 interface GameState {
   speed: number;
   score: number;
   breadcrumbs: number;
   time: number;
-  gameOver: boolean;
   gameWon: boolean;
   lives: number;
   enemyTimer: number;
   collectibleTimer: number;
   attackReady: boolean;
   attackTimer: number;
-  start: boolean;
+  screen: GameScreen;
 }
 
 export default class Game {
@@ -51,7 +53,8 @@ export default class Game {
   readonly input: InputHandler;
   readonly config: GameConfig;
   readonly background: Background;
-  readonly startButton: StartButton;
+  readonly startButton: Button;
+  readonly introButton: Button;
   readonly UI: UI;
   readonly spawner: Spawner;
   enemies: Enemy[];
@@ -63,7 +66,9 @@ export default class Game {
   collections: CollectionAnimation[];
   pointerX: number;
   pointerY: number;
-  private state: GameState;
+  state: GameState;
+  private activeIntro: IntroScene | null = null;
+  ground: number;
 
   get speed(): number { return this.state.speed; }
   set speed(value: number) { this.state.speed = value; }
@@ -74,8 +79,6 @@ export default class Game {
   set breadcrumbs(value: number) { this.state.breadcrumbs = value; }
   get time(): number { return this.state.time; }
   set time(value: number) { this.state.time = value; }
-  get gameOver(): boolean { return this.state.gameOver; }
-  set gameOver(value: boolean) { this.state.gameOver = value; }
   get gameWon(): boolean { return this.state.gameWon; }
   set gameWon(value: boolean) { this.state.gameWon = value; }
   get lives(): number { return this.state.lives; }
@@ -88,8 +91,10 @@ export default class Game {
   set attackReady(value: boolean) { this.state.attackReady = value; }
   get attackTimer(): number { return this.state.attackTimer; }
   set attackTimer(value: number) { this.state.attackTimer = value; }
-  get start(): boolean { return this.state.start; }
-  set start(value: boolean) { this.state.start = value; }
+
+  get start(): string { return this.state.screen; }
+  set start(value: GameScreen) { this.state.screen = value; }
+
   get attackCooldown(): number { return this.config.attackCooldown; }
   get win(): number { return this.config.win; }
   get maxParticles(): number { return this.config.maxParticles; }
@@ -113,6 +118,7 @@ export default class Game {
       maxEnemies: 4,
       fontColor: '#49351f',
     };
+    this.ground = this.height - this.config.groundLevel;
     this.background = new Background(this);
     this.player = new Player(this);
     this.input = new InputHandler(this);
@@ -124,7 +130,14 @@ export default class Game {
     this.collectibles = [];
     this.collections = [];
     this.floatingMessages = [];
-    this.startButton = new StartButton(this);
+    this.startButton = new Button(this, {
+      label: "Start Game",
+      onClick: () => this.startGame(),
+    });
+    this.introButton = new Button(this, {
+      label: "Intro",
+      onClick: () => this.startIntro(),
+    });
     this.spawner = new Spawner(this);
     this.pointerX = 0;
     this.pointerY = 0;
@@ -140,163 +153,164 @@ export default class Game {
       score: 0,
       breadcrumbs: 0,
       time: 0,
-      gameOver: false,
       gameWon: false,
       lives: 5,
       enemyTimer: 0,
       collectibleTimer: 0,
       attackReady: true,
       attackTimer: 0,
-      start: false,
+      screen: 'menu',
     };
   }
 
   update(deltaTime: number): void {
     this.state.time += deltaTime;
 
-    if (!this.state.start) {
-      this.startButton.setPosition(this.width * 0.5 - 220 * 0.5, this.height * 0.68);
-      this.startButton.setLabel("Start Game");
-      this.startButton.setPointer(this.pointerX, this.pointerY);
-      this.startButton.update(deltaTime);
-      if (this.input.keys.includes("Enter") || this.input.keys.includes(" ")) {
-        this.startGame();
-        this.input.keys = this.input.keys.filter((key) => key !== "Enter" && key !== " ");
-      }
-      return;
-    }
-
-    if (this.state.gameOver) {
-      this.startButton.setPosition(this.width * 0.5 - 220 * 0.5, this.height * 0.72);
-      this.startButton.setLabel("Start again");
-      this.startButton.setPointer(this.pointerX, this.pointerY);
-      this.startButton.update(deltaTime);
-      return;
-    }
-
-    this.background.update();
-    this.player.update(this.input.keys, deltaTime);
-    this.checkCollisions();
-
-    if (!this.state.attackReady) {
-      this.state.attackTimer += deltaTime;
-      if (this.state.attackTimer >= this.config.attackCooldown) {
-        this.state.attackReady = true;
-      }
-    }
-
-    // handle enemies
-    if (this.state.enemyTimer > this.config.enemyInterval) {
-      this.spawner.spawnEnemy();
-      this.state.enemyTimer = 0;
-    } else {
-      this.state.enemyTimer += deltaTime;
-    }
-    this.enemies.forEach(enemy => {
-      enemy.update(deltaTime);
-    })
-
-    // handle messages
-    this.floatingMessages.forEach(message => {
-      message.update();
-    })
-
-    // handle particles
-    this.particles.forEach((particle) => {
-      particle.update();
-    })
-    if (this.particles.length > this.config.maxParticles) {
-      this.particles.length = this.config.maxParticles;
-    }
-
-    // handle collectibles
-    if (this.state.collectibleTimer > this.config.collectibleInterval) {
-      this.spawner.spawnCollectible();
-      this.state.collectibleTimer = 0;
-    } else {
-      this.state.collectibleTimer += deltaTime;
-    }
-    this.collectibles.forEach(collectible => {
-      collectible.update(deltaTime);
-    })
-    this.collections.forEach(collection => {
-      collection.update(deltaTime);
-    })
-
-    // handle attack sprites
-    this.attacks.forEach((attack) => {
-      attack.update(deltaTime);
-    });
-
-    // handle collision sprites
-    this.collisions.forEach((collision) => {
-      collision.update(deltaTime);
-    });
-
-    // handle attack collisions with enemies
-    this.attacks.forEach((attack) => {
-      this.enemies.forEach((enemy) => {
-        if (enemy.markedForDeletion) return;
-        if (this.isColliding(attack, enemy)) {
-          enemy.markedForDeletion = true;
-          this.collisions.push(new RemovalAnimation(this, enemy.positionX + enemy.width * 0.5, enemy.positionY));
-          this.state.score++;
-          this.floatingMessages.push(new FloatingMessages('+1', enemy.positionX, enemy.positionY, 130, 45));
+    switch (this.state.screen) {
+      case 'menu':
+        this.startButton.setLayout("Start Game", this.width * 0.5 - 220 * 0.5, this.height * 0.6);
+        this.startButton.handlePointerMove(this.pointerX, this.pointerY);
+        this.startButton.update(deltaTime);
+        this.introButton.setLayout("Intro", this.width * 0.5 - 220 * 0.5, this.height * 0.8);
+        this.introButton.handlePointerMove(this.pointerX, this.pointerY);
+        this.introButton.update(deltaTime);
+        return;
+      case 'intro':
+        this.activeIntro?.update(deltaTime);
+        return;
+      case 'gameOver':
+        this.startButton.setLayout("Start again", this.width * 0.5 - 220 * 0.5, this.height * 0.72);
+        this.startButton.handlePointerMove(this.pointerX, this.pointerY);
+        this.startButton.update(deltaTime);
+        return;
+      case 'playing':
+        this.background.update();
+        this.player.update(this.input.keys, deltaTime);
+        this.checkCollisions();
+        if (!this.state.attackReady) {
+          this.state.attackTimer += deltaTime;
+          if (this.state.attackTimer >= this.config.attackCooldown) {
+            this.state.attackReady = true;
+          }
         }
-      });
-    });
-    this.enemies = this.enemies.filter(enemy => !enemy.markedForDeletion);
-    this.collectibles = this.collectibles.filter(collectible => !collectible.markedForDeletion);
-    this.collections = this.collections.filter(collection => !collection.markedForDeletion);
-    this.particles = this.particles.filter(particle => !particle.markedForDeletion);
-    this.attacks = this.attacks.filter(attack => !attack.markedForDeletion);
-    this.collisions = this.collisions.filter(collision => !collision.markedForDeletion);
-    this.floatingMessages = this.floatingMessages.filter(message => !message.markedForDeletion);
+        
+        // handle enemies
+        if (this.state.enemyTimer > this.config.enemyInterval) {
+          this.spawner.spawnEnemy();
+          this.state.enemyTimer = 0;
+        } else {
+          this.state.enemyTimer += deltaTime;
+        }
+        this.enemies.forEach(enemy => {
+          enemy.update(deltaTime);
+        })
+    
+        // handle messages
+        this.floatingMessages.forEach(message => {
+          message.update();
+        })
+    
+        // handle particles
+        this.particles.forEach((particle) => {
+          particle.update();
+        })
+        if (this.particles.length > this.config.maxParticles) {
+          this.particles.length = this.config.maxParticles;
+        }
+    
+        // handle collectibles
+        if (this.state.collectibleTimer > this.config.collectibleInterval) {
+          this.spawner.spawnCollectible();
+          this.state.collectibleTimer = 0;
+        } else {
+          this.state.collectibleTimer += deltaTime;
+        }
+        this.collectibles.forEach(collectible => {
+          collectible.update(deltaTime);
+        })
+        this.collections.forEach(collection => {
+          collection.update(deltaTime);
+        })
+    
+        // handle attack sprites
+        this.attacks.forEach((attack) => {
+          attack.update(deltaTime);
+        });
+    
+        // handle collision sprites
+        this.collisions.forEach((collision) => {
+          collision.update(deltaTime);
+        });
+    
+        // handle attack collisions with enemies
+        this.attacks.forEach((attack) => {
+          this.enemies.forEach((enemy) => {
+            if (enemy.markedForDeletion) return;
+            if (this.isColliding(attack, enemy)) {
+              enemy.markedForDeletion = true;
+              this.collisions.push(new RemovalAnimation(this, enemy.positionX + enemy.width * 0.5, enemy.positionY));
+              this.state.score++;
+              this.floatingMessages.push(new FloatingMessages('+1', enemy.positionX, enemy.positionY, 130, 45));
+            }
+          });
+        });
+        this.enemies = this.enemies.filter(enemy => !enemy.markedForDeletion);
+        this.collectibles = this.collectibles.filter(collectible => !collectible.markedForDeletion);
+        this.collections = this.collections.filter(collection => !collection.markedForDeletion);
+        this.particles = this.particles.filter(particle => !particle.markedForDeletion);
+        this.attacks = this.attacks.filter(attack => !attack.markedForDeletion);
+        this.collisions = this.collisions.filter(collision => !collision.markedForDeletion);
+        this.floatingMessages = this.floatingMessages.filter(message => !message.markedForDeletion);
+        break;
+    }
   }
 
   draw(context: CanvasRenderingContext2D): void {
     this.background.draw(context);
 
-    if (!this.state.start) {
-      this.UI.drawStartScreen(context);
-      this.startButton.draw(context);
-      return;
+    switch (this.state.screen) {
+      case 'menu':
+        this.UI.drawStartScreen(context);
+        this.startButton.draw(context);
+        this.introButton.draw(context);
+        return;
+      case 'intro':
+        this.activeIntro?.draw(context);
+        return;
+      case 'gameOver':
+        this.UI.drawGameOverScreen(context);
+        this.startButton.draw(context);
+        return;
+      case 'playing':
+        this.player.draw(context);
+        this.enemies.forEach(enemy => {
+          enemy.draw(context);
+        });
+        this.collectibles.forEach(collectible => {
+          collectible.draw(context);
+        });
+        this.collections.forEach(collection => {
+          collection.draw(context);
+        });
+        this.particles.forEach(particle => {
+          particle.draw(context);
+        });
+        this.attacks.forEach(attack => {
+          attack.draw(context);
+        });
+        this.collisions.forEach(collision => {
+          collision.draw(context);
+        });
+        this.UI.draw(context);
+        this.floatingMessages.forEach(message => {
+          message.draw(context);
+        });
+        break;
     }
-
-    if (this.state.gameOver) {
-      this.UI.drawGameOverScreen(context);
-      this.startButton.draw(context);
-      return;
-    }
-
-    this.player.draw(context);
-    this.enemies.forEach(enemy => {
-      enemy.draw(context);
-    });
-    this.collectibles.forEach(collectible => {
-      collectible.draw(context);
-    });
-    this.collections.forEach(collection => {
-      collection.draw(context);
-    });
-    this.particles.forEach(particle => {
-      particle.draw(context);
-    });
-    this.attacks.forEach(attack => {
-      attack.draw(context);
-    });
-    this.collisions.forEach(collision => {
-      collision.draw(context);
-    });
-    this.UI.draw(context);
-    this.floatingMessages.forEach(message => {
-      message.draw(context);
-    });
   }
 
   private resetGameState(): void {
     this.state = this.createInitialState();
-
     this.clearArrays(
       this.enemies,
       this.particles,
@@ -306,7 +320,6 @@ export default class Game {
       this.collectibles,
       this.collections
     );
-
     this.resetPlayerState();
   }
 
@@ -318,7 +331,7 @@ export default class Game {
 
   private resetPlayerState(): void {
     this.player.positionX = 0;
-    this.player.positionY = this.height - this.player.height - this.config.groundLevel;
+    this.player.positionY = this.ground - this.player.height;
     this.player.velocityY = 0;
     this.player.speed = 0;
     this.player.frameX = 0;
@@ -329,23 +342,59 @@ export default class Game {
 
   startGame(): void {
     this.resetGameState();
-    this.state.start = true;
+    this.activeIntro = null;
+    this.state.screen = 'playing';
+  }
+
+  startIntro(): void {
+    this.resetGameState();
+    this.state.screen = 'intro';
+    this.activeIntro = new IntroScene(this);
   }
 
   handlePointerMove(x: number, y: number): void {
     this.pointerX = x;
     this.pointerY = y;
-  }
 
-  isHoveringStartButton(): boolean {
-    return (!this.state.start || this.state.gameOver) && this.startButton.isClicked(this.pointerX, this.pointerY);
+    if (this.state.screen === 'intro') {
+      this.activeIntro?.handlePointerMove(x, y);
+      return;
+    }
+
+    if (this.state.screen === 'menu' || this.state.screen === "gameOver") {
+      this.startButton.handlePointerMove(x, y);
+      this.introButton.handlePointerMove(x, y);
+    }
   }
 
   handlePointerDown(x: number, y: number): void {
     this.handlePointerMove(x, y);
-    if ((!this.state.start || this.state.gameOver) && this.startButton.isClicked(x, y)) {
-      this.startGame();
+
+    if (this.state.screen === 'intro') {
+      if (this.activeIntro?.handlePointerDown(x, y)) {
+        return;
+      }
     }
+
+    if (this.state.screen === 'menu' || this.state.screen === "gameOver") {
+      this.startButton.handlePointerDown(x, y);
+
+      if (this.state.screen === 'menu') {
+        this.introButton.handlePointerDown(x, y);
+      }
+    }
+  }
+
+  isHoveringButton(): boolean {
+    if (this.state.screen === 'intro') {
+      return this.activeIntro?.isHoveringButton() ?? false;
+    }
+
+    if (this.state.screen === 'menu' || this.state.screen === "gameOver") {
+      return this.startButton.isHovered() || this.introButton.isHovered();
+    }
+
+    return false;
   }
 
   private isColliding(a: { positionX: number; positionY: number; width: number; height: number }, b: { positionX: number; positionY: number; width: number; height: number }): boolean {
@@ -372,7 +421,7 @@ export default class Game {
         );
         if (this.state.breadcrumbs >= this.config.win) {
           this.state.gameWon = true;
-          this.state.gameOver = true;
+          this.state.screen = "gameOver";
         }
       }
     });
@@ -398,7 +447,7 @@ export default class Game {
           this.state.lives--;
           if (this.state.lives <= 0) {
             this.state.gameWon = false;
-            this.state.gameOver = true;
+            this.state.screen = "gameOver";
           }
         }
       }

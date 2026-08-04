@@ -57,7 +57,7 @@ export class Breadcrumb extends Collectible {
   constructor(game: Game) {
     super(game);
     this.positionX = this.game.width;
-    this.positionY = Math.random() * (this.game.height - this.game.groundLevel - this.height);
+    this.positionY = Math.random() * (this.game.ground - this.height);
     this.maxFrame = 0;
     this.image = document.getElementById("bread") as HTMLImageElement;
   }

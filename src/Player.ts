@@ -1,5 +1,5 @@
 import type Game from "./Game";
-import { Falling, Jumping, Standing, Walking, Rolling, Hit, Attack } from "./PlayerStates";
+import { Falling, Jumping, Standing, Walking, Rolling, Hit, Attack, Distract } from "./PlayerStates";
 
 export default class Player {
   private readonly game: Game;
@@ -17,8 +17,8 @@ export default class Player {
   frameTimer: number;
   speed: number;
   readonly maxSpeed: number;
-  readonly states: (Standing | Walking | Jumping | Falling | Rolling | Hit | Attack)[];
-  currentState: Standing | Walking | Jumping | Falling | Rolling | Hit | Attack;
+  readonly states: (Standing | Walking | Jumping | Falling | Rolling | Hit | Attack | Distract)[];
+  currentState: Standing | Walking | Jumping | Falling | Rolling | Hit | Attack | Distract;
   jumpCount: number;
   readonly maxJumps: number;
   readonly jumpVelocity: number;
@@ -30,7 +30,7 @@ export default class Player {
     this.width = 64;
     this.height = 76;
     this.positionX = 0;
-    this.positionY = this.game.height - this.height - this.game.groundLevel;
+    this.positionY = this.game.ground - this.height;
     this.velocityY = 0;
     this.image = document.getElementById("player") as HTMLImageElement;
     this.frameX = 0;
@@ -41,11 +41,11 @@ export default class Player {
     this.frameTimer = 0;
     this.speed = 0;
     this.maxSpeed = 1;
-    this.states = [new Standing(this.game), new Walking(this.game), new Jumping(this.game), new Falling(this.game), new Rolling(this.game), new Hit(this.game), new Attack(this.game)];
+    this.states = [new Standing(this.game), new Walking(this.game), new Jumping(this.game), new Falling(this.game), new Rolling(this.game), new Hit(this.game), new Attack(this.game), new Distract(this.game)];
     this.currentState = this.states[0];
     this.jumpCount = 0;
     this.maxJumps = 2;
-    this.jumpVelocity = Math.sqrt(this.game.gravity * (this.game.height - this.game.groundLevel - this.height));
+    this.jumpVelocity = Math.sqrt(this.game.gravity * (this.game.ground - this.height));
     this.jumpKeyJustPressed = false;
     this.prevInput = [];
 
@@ -59,7 +59,7 @@ export default class Player {
 
     // horizontal movement
     this.positionX += this.speed;
-    if (input.includes('ArrowRight') && this.currentState !== this.states[5])this.speed = this.maxSpeed;
+    if (input.includes('ArrowRight') && this.currentState !== this.states[5]) this.speed = this.maxSpeed;
     else if (input.includes('ArrowLeft') && this.currentState !== this.states[5]) this.speed = -this.maxSpeed;
     else this.speed = 0;
 
@@ -76,8 +76,8 @@ export default class Player {
     }
 
     // vertical boundaries
-    if (this.positionY > this.game.height - this.height - this.game.groundLevel) {
-      this.positionY = this.game.height - this.height - this.game.groundLevel;
+    if (this.positionY > this.game.ground - this.height) {
+      this.positionY = this.game.ground - this.height;
     }
     if (this.positionY < 0) {
       this.positionY = 0;
@@ -101,7 +101,7 @@ export default class Player {
   }
 
   onGround(): boolean {
-    return this.positionY >= this.game.height - this.height - this.game.groundLevel;
+    return this.positionY >= this.game.ground - this.height;
   }
 
   setState(state: number, speed: number): void {

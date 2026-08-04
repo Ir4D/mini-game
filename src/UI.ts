@@ -16,12 +16,14 @@ export class UI {
   }
 
   draw(context: CanvasRenderingContext2D): void {
-    if (!this.game.start) {
+    // if (!this.game.start) {
+    if (this.game.state.screen === 'menu') {
       this.drawStartScreen(context);
       return;
     }
 
-    if (this.game.gameOver) {
+    // if (this.game.gameOver) {
+    if (this.game.state.screen === 'gameOver') {
       this.drawGameOverScreen(context);
       return;
     }

@@ -36,7 +36,7 @@ window.addEventListener('load', function() {
     game.update(deltaTime);
     game.draw(context);
 
-    canvas.style.cursor = game.isHoveringStartButton() ? "pointer" : "default";
+    canvas.style.cursor = game.isHoveringButton() ? "pointer" : "default";
     requestAnimationFrame(animate);
   }
   animate(0);

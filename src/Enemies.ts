@@ -94,7 +94,7 @@ export class StandingEnemy extends Enemy {
   constructor(game: Game) {
     super(game);
     this.positionX = this.game.width;
-    this.positionY = this.game.height - this.height - this.game.groundLevel;
+    this.positionY = this.game.ground - this.height;
     this.speedX = 0;
     this.speedY = 0;
     this.maxFrame = 8;
