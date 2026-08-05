@@ -68,7 +68,7 @@ export default class Game {
   pointerY: number;
   state: GameState;
   private activeIntro: IntroScene | null = null;
-  ground: number;
+  // ground: number;
 
   get speed(): number { return this.state.speed; }
   set speed(value: number) { this.state.speed = value; }
@@ -103,6 +103,8 @@ export default class Game {
   get groundLevel(): number { return this.config.groundLevel; }
   get fontColor(): string { return this.config.fontColor; }
 
+  get ground(): number { return this.height - this.config.groundLevel; }
+
   constructor({ width, height }: GameOptions) {
     this.width = width;
     this.height = height;
@@ -118,7 +120,7 @@ export default class Game {
       maxEnemies: 4,
       fontColor: '#49351f',
     };
-    this.ground = this.height - this.config.groundLevel;
+    // this.ground = this.height - this.config.groundLevel;
     this.background = new Background(this);
     this.player = new Player(this);
     this.input = new InputHandler(this);

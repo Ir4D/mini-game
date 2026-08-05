@@ -42,7 +42,7 @@ export class UI {
 
     // breadcrumbs
     context.font = this.fontSize * 0.8 + 'px ' + this.fontFamily;
-    context.fillText('Breadcrumbs: ' + this.game.breadcrumbs + '/' + this.game.win, 20, 80)
+    context.fillText('Bread: ' + this.game.breadcrumbs + '/' + this.game.win, 20, 80)
 
     // timer
     context.fillText('Time: ' + (this.game.time * 0.001).toFixed(1) + 's', 20, 110);

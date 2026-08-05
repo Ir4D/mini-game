@@ -1,6 +1,8 @@
 import Game from "./Game";
 import Button from "./Button";
 
+type IntroPhase = 'familyLeaving' | 'storyFadingOut' | 'instructionsFadingIn' | 'waitingForStart';
+
 interface DuckCharacter {
   width:number, 
   height: number, 
@@ -14,17 +16,15 @@ interface DuckCharacter {
 
 export default class IntroScene {
   game: Game;
+  private phase: IntroPhase = 'familyLeaving';
+  private storyAlpha: number = 1;
+  private instructionsAlpha: number = 0;
+  private readonly fadeDuration: number = 700;
   duckFamily: DuckCharacter[];
-  private butterfly: { width:number, height: number, positionX: number; positionY: number; frameX: number; maxFrame: number };
-  imageButterfly: HTMLImageElement;
-
+  private butterfly: { image: HTMLImageElement, width:number, height: number, positionX: number; positionY: number; frameX: number; maxFrame: number };
   readonly fps: number;
   readonly frameInterval: number;
   frameTimer: number;
-
-  private done = false;
-  private showInstructions = false;
-  private instructionsAlpha = 0;
   startButton: Button;
   imageBread: HTMLImageElement;
 
@@ -33,7 +33,7 @@ export default class IntroScene {
     this.fps = 20;
     this.frameInterval = 1000 / this.fps;
     this.frameTimer = 0;
-    this.imageBread = document.getElementById("bread") as HTMLImageElement;
+    this.imageBread = this.getImage('bread');
     this.duckFamily = [
     {
       width: 100,
@@ -77,12 +77,9 @@ export default class IntroScene {
     },
   ];
 
-    this.butterfly = { width: 16, height: 16, positionX: game.player.positionX + game.player.width, positionY: game.player.positionY, frameX: 0, maxFrame: 4 };
-    this.imageButterfly = this.getImage('butterfly');
-
+    this.butterfly = { image: this.getImage('butterfly'), width: 16, height: 16, positionX: game.player.positionX + game.player.width, positionY: game.player.positionY, frameX: 0, maxFrame: 4 };
     this.game.player.currentState = this.game.player.states[7];
     this.game.player.currentState.enter();
-
     this.startButton = new Button(this.game, {
       label: "Start Game",
       onClick: () => this.game.startGame(),
@@ -90,98 +87,46 @@ export default class IntroScene {
   }
 
   draw(context: CanvasRenderingContext2D): void {
-    if (!this.showInstructions) {
-      this.drawHeading(context);
+    context.fillStyle = 'rgba(255, 255, 255, 0.25)';
+    context.fillRect(0, 0, this.game.width, this.game.height);
+
+    if (this.phase === 'familyLeaving' || this.phase === 'storyFadingOut') {
+      this.drawStoryText(context);
     }
 
-    // duck family & butterfly
-    this.game.player.draw(context);
-    for (const duck of this.duckFamily) {
-      context.drawImage(
-        duck.image,
-        duck.frameX * duck.width,
-        0,
-        duck.width,
-        duck.height,
-        duck.positionX,
-        duck.positionY - duck.height,
-        duck.width,
-        duck.height
-      )
-    }
-    context.drawImage(this.imageButterfly, this.butterfly.frameX * this.butterfly.width, 0, this.butterfly.width, this.butterfly.height, this.butterfly.positionX, this.butterfly.positionY - this.butterfly.height, this.butterfly.width, this.butterfly.height);
-
+    this.drawCharacters(context);
     
-    if (this.showInstructions) {
+    if (this.phase === 'instructionsFadingIn' || this.phase === 'waitingForStart' ) {
       this.drawInstructions(context);
     }
   }
 
   update(deltaTime: number) {
-    this.startButton.setPointer(this.game.pointerX, this.game.pointerY);
-    this.startButton.update(deltaTime);
-
-    if (!this.showInstructions) {
-      for (const duck of this.duckFamily) {
-        duck.positionX += duck.speed;
-      }
-
-      const wholeFamilyLeftScreen =
-        this.duckFamily.every(
-          duck =>
-            duck.positionX >
-            this.game.width + duck.width
-        );
-
-      if (wholeFamilyLeftScreen) {
-        this.showInstructions = true;
-      }
-    }
-
-    // instructions
-    if (this.showInstructions) {
-      this.instructionsAlpha = Math.min(
-        1,
-        this.instructionsAlpha + deltaTime * 0.002
-      );
-
-      if (this.game.input.keys.includes('Enter')) {
-        this.done = true;
-      }
-    }
-
-    // sprite animation
-    if (this.frameTimer > this.frameInterval) {
-      this.frameTimer = 0;
-
-      for (const duck of this.duckFamily) {
-        duck.frameX = duck.frameX < duck.maxFrame ? duck.frameX + 1 : 0;
-      }
-
-      this.butterfly.frameX = this.butterfly.frameX < this.butterfly.maxFrame ? this.butterfly.frameX + 1 : 0;
-
-    } else {
-      this.frameTimer += deltaTime;
-    }
+    this.updateFamilyMovement();
+    this.updateTransition(deltaTime);
+    this.updateSpriteAnimation(deltaTime);
 
     this.game.player.update(this.game.input.keys, deltaTime);
-
-    this.startButton.setLayout(
-      "Start Game",
-      this.game.width * 0.5 - 220 * 0.5,
-      this.game.height * 0.8
-    );
+    
+    this.startButton.setLayout("Start Game", this.game.width * 0.5 - 220 * 0.5, this.game.height * 0.8);
+    if (this.phase === 'waitingForStart') {
+      this.startButton.setPointer(this.game.pointerX, this.game.pointerY);
+      this.startButton.update(deltaTime);
+    }
   }
 
   handlePointerMove(x: number, y: number): void {
+    if (this.phase !== 'waitingForStart') return;
     this.startButton.handlePointerMove(x, y);
   }
 
   handlePointerDown(x: number, y: number): boolean {
+    if (this.phase !== 'waitingForStart') return false;
     return this.startButton.handlePointerDown(x, y);
   }
 
   isHoveringButton(): boolean {
+    if (this.phase !== 'waitingForStart') return false;
     return this.startButton.isHovered();
   }
 
@@ -195,15 +140,88 @@ export default class IntroScene {
     return image;
   }
 
-  private drawHeading(context: CanvasRenderingContext2D): void {
+  private updateFamilyMovement(): void {
+    if (this.phase !== 'familyLeaving') return;
+
+    for (const duck of this.duckFamily) {
+      duck.positionX += duck.speed;
+    }
+    
+    const wholeFamilyLeftScreen = this.duckFamily.every(duck => duck.positionX > this.game.width + duck.width);
+  
+    if (wholeFamilyLeftScreen) {
+      this.phase = 'storyFadingOut';
+    }
+  }
+
+  private updateSpriteAnimation(deltaTime: number): void {
+    this.frameTimer += deltaTime;
+    if (this.frameTimer < this.frameInterval) {
+      return;
+    }
+
+    this.frameTimer -= this.frameInterval;
+    for (const duck of this.duckFamily) {
+      duck.frameX = duck.frameX < duck.maxFrame ? duck.frameX + 1 : 0;
+    }
+    this.butterfly.frameX = this.butterfly.frameX < this.butterfly.maxFrame ? this.butterfly.frameX + 1 : 0;
+  }
+
+  private updateTransition(deltaTime: number): void {
+    const alphaStep = deltaTime / this.fadeDuration;
+
+    switch (this.phase) {
+      case 'familyLeaving':
+        break;
+
+      case 'storyFadingOut':
+        this.storyAlpha = Math.max(0, this.storyAlpha - alphaStep);
+        if (this.storyAlpha <= 0) {
+          this.storyAlpha = 0;
+          this.phase = 'instructionsFadingIn';
+        }
+        break;
+
+      case 'instructionsFadingIn':
+        this.instructionsAlpha = Math.min(1, this.instructionsAlpha + alphaStep);
+        if (this.instructionsAlpha >= 1) {
+          this.instructionsAlpha = 1;
+          this.phase = 'waitingForStart';
+        }
+        break;
+
+      case 'waitingForStart':
+        break;
+    }
+  }
+
+  private drawCharacters(context: CanvasRenderingContext2D): void {
+    this.game.player.draw(context);
+
+    for (const duck of this.duckFamily) {
+      context.drawImage(
+        duck.image,
+        duck.frameX * duck.width,
+        0,
+        duck.width,
+        duck.height,
+        duck.positionX,
+        duck.positionY - duck.height,
+        duck.width,
+        duck.height
+      )
+    }
+    context.drawImage(this.butterfly.image, this.butterfly.frameX * this.butterfly.width, 0, this.butterfly.width, this.butterfly.height, this.butterfly.positionX, this.butterfly.positionY - this.butterfly.height, this.butterfly.width, this.butterfly.height);
+  }
+
+  private drawStoryText(context: CanvasRenderingContext2D): void {
+    if (this.storyAlpha <= 0) return;
     context.save();
-    context.fillStyle = 'rgba(255, 255, 255, 0.25)';
-    context.fillRect(0, 0, this.game.width, this.game.height);
+    context.globalAlpha = this.storyAlpha;
     context.fillStyle = '#49351f';
     context.font = 'bold 34px Nunito';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
-
     const centerX = this.game.width * 0.5;
     const startY = this.game.height * 0.15;
     const lineHeight = 40;
@@ -227,38 +245,26 @@ export default class IntroScene {
   }
 
   private drawInstructions(context: CanvasRenderingContext2D): void {
-    context.save();
+    if (this.instructionsAlpha <= 0) return;
 
+    context.save();
+    context.globalAlpha = this.instructionsAlpha;
     const panelWidth = 700;
     const panelHeight = 330;
     const panelX = this.game.width * 0.5 - panelWidth * 0.5;
     const panelY = this.game.height * 0.09;
-
     context.fillStyle = 'rgba(255, 248, 232, 0.94)';
     context.strokeStyle = '#6b4b2a';
     context.lineWidth = 4;
-
     context.beginPath();
-    context.roundRect(
-      panelX,
-      panelY,
-      panelWidth,
-      panelHeight,
-      20
-    );
+    context.roundRect(panelX, panelY, panelWidth, panelHeight, 20);
     context.fill();
     context.stroke();
-
     context.fillStyle = '#49351f';
     context.font = 'bold 28px Nunito';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
-
-    context.fillText(
-      'Controls',
-      this.game.width * 0.5,
-      panelY + 35
-    );
+    context.fillText('Controls', this.game.width * 0.5, panelY + 35);
 
     const controls = [
       { key: '→', text: 'Move forward' },
@@ -273,13 +279,8 @@ export default class IntroScene {
     const columnWidth = 260;
     const columnGap = 30;
     const rowHeight = 68;
-
-    const controlsWidth =
-      columnWidth * columns +
-      columnGap * (columns - 1);
-
+    const controlsWidth = columnWidth * columns + columnGap * (columns - 1);
     const controlsStartX = this.game.width * 0.5 - controlsWidth * 0.5;
-
     const controlsStartY = panelY + 70;
 
     controls.forEach((control, index) => {
@@ -287,135 +288,63 @@ export default class IntroScene {
       const row = Math.floor(index / columns);
       const x = controlsStartX + column * (columnWidth + columnGap);
       const y = controlsStartY + row * rowHeight;
-
-      this.drawControlRow(
-        context,
-        x,
-        y,
-        control.key,
-        control.text
-      );
+      this.drawControlRow(context, x, y, control.key, control.text);
     });
 
-    this.drawBreadRow(
-      context,
-      panelX + 80,
-      panelY + 270
-    );
-
-    context.restore();
-
+    this.drawBreadRow(context, panelX + 80, panelY + 270);
     this.startButton.draw(context);
+    context.restore();
   }
 
-  private drawKeyCap(
-    context: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    label: string
-  ): void {
+  private drawKeyCap( context: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, label: string ): void {
     context.save();
-
-    // shadow
     context.shadowColor = 'rgba(0,0,0,0.15)';
     context.shadowBlur = 4;
     context.shadowOffsetY = 2;
-
-    // button fill
     context.fillStyle = '#fff8e8';
     context.strokeStyle = '#6b4b2a';
     context.lineWidth = 3;
-
     context.beginPath();
     context.roundRect(x, y, width, height, 10);
     context.fill();
     context.stroke();
-
-    // label
     context.shadowColor = 'transparent';
     context.fillStyle = '#49351f';
     context.font = 'bold 20px Nunito';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     context.fillText(label, x + width * 0.5, y + height * 0.5);
-
     context.restore();
   }
 
-  private drawControlRow(
-    context: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    keyLabel: string,
-    description: string
-  ): void {
-    const keyWidth =
-      keyLabel.length > 3 ? 92 : 58;
-
+  private drawControlRow(context: CanvasRenderingContext2D, x: number, y: number, keyLabel: string, description: string): void {
+    const keyWidth = keyLabel.length > 3 ? 92 : 58;
     const keyHeight = 42;
     const gap = 16;
 
-    this.drawKeyCap(
-      context,
-      x,
-      y,
-      keyWidth,
-      keyHeight,
-      keyLabel
-    );
+    this.drawKeyCap(context, x, y, keyWidth, keyHeight, keyLabel);
 
     context.save();
-
     context.fillStyle = '#49351f';
     context.font = '20px Nunito';
     context.textAlign = 'left';
     context.textBaseline = 'middle';
-
-    context.fillText(
-      description,
-      x + keyWidth + gap,
-      y + keyHeight * 0.5
-    );
-
+    context.fillText( description, x + keyWidth + gap, y + keyHeight * 0.5);
     context.restore();
   }
 
-  private drawBreadRow(
-    context: CanvasRenderingContext2D,
-    x: number,
-    y: number
-  ): void {
+  private drawBreadRow(context: CanvasRenderingContext2D, x: number, y: number): void {
     const iconSize = 42;
     const textOffsetX = 100;
 
-    context.drawImage(
-      this.imageBread,
-      0,
-      0,
-      this.imageBread.width,
-      this.imageBread.height,
-      x + 16,
-      y,
-      iconSize,
-      iconSize
-    );
+    context.drawImage(this.imageBread, 0, 0, this.imageBread.width, this.imageBread.height, x + 16, y, iconSize, iconSize);
 
     context.save();
     context.fillStyle = '#49351f';
     context.font = '22px Nunito';
     context.textAlign = 'left';
     context.textBaseline = 'middle';
-    context.fillText(
-      'Collect 5 pieces of bread to win',
-      x + textOffsetX,
-      y + iconSize * 0.5
-    );
+    context.fillText('Collect 5 pieces of bread to win', x + textOffsetX, y + iconSize * 0.5);
     context.restore();
-  }
-
-  isDone(): boolean {
-    return this.done;
   }
 }
