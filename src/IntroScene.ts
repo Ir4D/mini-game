@@ -111,7 +111,6 @@ export default class IntroScene {
     this.startButton.setLayout("Start Game", this.game.width * 0.5 - 220 * 0.5, this.game.height * 0.8);
     if (this.phase === 'waitingForStart') {
       this.startButton.setPointer(this.game.pointerX, this.game.pointerY);
-      this.startButton.update(deltaTime);
     }
   }
 

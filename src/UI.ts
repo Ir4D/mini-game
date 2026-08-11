@@ -16,13 +16,11 @@ export class UI {
   }
 
   draw(context: CanvasRenderingContext2D): void {
-    // if (!this.game.start) {
     if (this.game.state.screen === 'menu') {
       this.drawStartScreen(context);
       return;
     }
 
-    // if (this.game.gameOver) {
     if (this.game.state.screen === 'gameOver') {
       this.drawGameOverScreen(context);
       return;
@@ -39,14 +37,11 @@ export class UI {
 
     // score
     context.fillText('Score: ' + this.game.score, 20, 50);
-
     // breadcrumbs
     context.font = this.fontSize * 0.8 + 'px ' + this.fontFamily;
     context.fillText('Bread: ' + this.game.breadcrumbs + '/' + this.game.win, 20, 80)
-
     // timer
     context.fillText('Time: ' + (this.game.time * 0.001).toFixed(1) + 's', 20, 110);
-
     // lives
     for (let i = 0; i < this.game.lives; i++) {
       context.drawImage(this.livesImage, 30 * i + 20, 120, 25, 25);
@@ -122,40 +117,44 @@ export class UI {
 
   drawStartScreen(context: CanvasRenderingContext2D): void {
     context.save();
-
     context.fillStyle = 'rgba(255, 255, 255, 0.25)';
     context.fillRect(0, 0, this.game.width, this.game.height);
-
     context.fillStyle = '#49351f';
     context.font = 'bold 34px Nunito';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
-
     context.fillText(
       'Help the little duckling find its way back to Mom!',
       this.game.width * 0.5,
       this.game.height * 0.4
     );
-
     context.restore();
   }
 
   drawGameOverScreen(context: CanvasRenderingContext2D): void {
     context.save();
-
     context.fillStyle = 'rgba(0, 0, 0, 0.45)';
     context.fillRect(0, 0, this.game.width, this.game.height);
-
     context.fillStyle = '#fff7e6';
     context.font = 'bold 42px Nunito';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     context.fillText(this.game.gameWon ? 'You Won!' : 'Game Over', this.game.width * 0.5, this.game.height * 0.33);
-
     context.font = 'bold 24px Nunito';
     context.fillText(this.game.gameWon ? 'You helped the duckling find the way home!' : 'You lost all your lives...', this.game.width * 0.5, this.game.height * 0.42);
     context.fillText(`Score: ${this.game.score}`, this.game.width * 0.5, this.game.height * 0.48);
+    context.restore();
+  }
 
+  drawPauseScreen(context: CanvasRenderingContext2D): void {
+    context.save();
+    context.fillStyle = 'rgba(0, 0, 0, 0.45)';
+    context.fillRect(0, 0, this.game.width, this.game.height);
+    context.fillStyle = '#fff7e6';
+    context.font = 'bold 42px Nunito';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillText('Pause', this.game.width * 0.5, this.game.height * 0.25);
     context.restore();
   }
 }

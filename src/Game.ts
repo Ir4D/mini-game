@@ -30,7 +30,7 @@ interface GameConfig {
   fontColor: string;
 }
 
-type GameScreen = 'menu' | 'intro' | 'playing' | 'gameOver';
+type GameScreen = 'menu' | 'intro' | 'pause' | 'playing' | 'gameOver';
 
 interface GameState {
   speed: number;
@@ -55,6 +55,8 @@ export default class Game {
   readonly background: Background;
   readonly startButton: Button;
   readonly introButton: Button;
+  readonly pauseButton: Button;
+  readonly resumeButton: Button;
   readonly UI: UI;
   readonly spawner: Spawner;
   enemies: Enemy[];
@@ -68,7 +70,7 @@ export default class Game {
   pointerY: number;
   state: GameState;
   private activeIntro: IntroScene | null = null;
-  // ground: number;
+  animationTime: number;
 
   get speed(): number { return this.state.speed; }
   set speed(value: number) { this.state.speed = value; }
@@ -120,7 +122,6 @@ export default class Game {
       maxEnemies: 4,
       fontColor: '#49351f',
     };
-    // this.ground = this.height - this.config.groundLevel;
     this.background = new Background(this);
     this.player = new Player(this);
     this.input = new InputHandler(this);
@@ -140,6 +141,19 @@ export default class Game {
       label: "Intro",
       onClick: () => this.startIntro(),
     });
+    this.pauseButton = new Button(this, {
+      width: 80,
+      height: 40,
+      label: "Pause",
+      onClick: () => this.startPause(),
+      color: "secondary",
+      size: "compact"
+    });
+    this.resumeButton = new Button(this, {
+      label: "Resume",
+      onClick: () => this.stopPause(),
+      color: "secondary"
+    });
     this.spawner = new Spawner(this);
     this.pointerX = 0;
     this.pointerY = 0;
@@ -147,6 +161,7 @@ export default class Game {
     this.player.currentState = this.player.states[0];
     this.player.currentState.enter();
     this.resetGameState();
+    this.animationTime = 0;
   }
 
   private createInitialState(): GameState {
@@ -166,27 +181,35 @@ export default class Game {
   }
 
   update(deltaTime: number): void {
-    this.state.time += deltaTime;
-
+    this.animationTime += deltaTime;
+    
     switch (this.state.screen) {
       case 'menu':
-        this.startButton.setLayout("Start Game", this.width * 0.5 - 220 * 0.5, this.height * 0.6);
+        this.startButton.setLayout("Start Game", this.width * 0.5 - this.startButton.buttonWidth * 0.5, this.height * 0.6);
         this.startButton.handlePointerMove(this.pointerX, this.pointerY);
-        this.startButton.update(deltaTime);
-        this.introButton.setLayout("Intro", this.width * 0.5 - 220 * 0.5, this.height * 0.8);
+        this.introButton.setLayout("Intro", this.width * 0.5 - this.introButton.buttonWidth * 0.5, this.height * 0.8);
         this.introButton.handlePointerMove(this.pointerX, this.pointerY);
-        this.introButton.update(deltaTime);
         return;
       case 'intro':
         this.activeIntro?.update(deltaTime);
         return;
-      case 'gameOver':
-        this.startButton.setLayout("Start again", this.width * 0.5 - 220 * 0.5, this.height * 0.72);
+      case 'pause':
+        this.resumeButton.setLayout("Resume", this.width * 0.5 - this.resumeButton.buttonWidth * 0.5, this.height * 0.4);
+        this.resumeButton.handlePointerMove(this.pointerX, this.pointerY);
+        this.startButton.setLayout("Restart", this.width * 0.5 - this.startButton.buttonWidth * 0.5, this.height * 0.6);
         this.startButton.handlePointerMove(this.pointerX, this.pointerY);
-        this.startButton.update(deltaTime);
+        this.introButton.setLayout("Intro", this.width * 0.5 - this.introButton.buttonWidth * 0.5, this.height * 0.8);
+        this.introButton.handlePointerMove(this.pointerX, this.pointerY);
+        return;
+      case 'gameOver':
+        this.startButton.setLayout("Start again", this.width * 0.5 - this.startButton.buttonWidth * 0.5, this.height * 0.72);
+        this.startButton.handlePointerMove(this.pointerX, this.pointerY);
         return;
       case 'playing':
+        this.state.time += deltaTime;
         this.background.update();
+        this.pauseButton.setLayout("Pause", this.width - this.pauseButton.buttonWidth - 20, 20);
+        this.pauseButton.handlePointerMove(this.pointerX, this.pointerY);
         this.player.update(this.input.keys, deltaTime);
         this.checkCollisions();
         if (!this.state.attackReady) {
@@ -279,11 +302,44 @@ export default class Game {
       case 'intro':
         this.activeIntro?.draw(context);
         return;
+      case 'pause':
+        this.player.draw(context);
+        this.enemies.forEach(enemy => {
+          enemy.draw(context);
+        });
+        this.collectibles.forEach(collectible => {
+          collectible.draw(context);
+        });
+        this.collections.forEach(collection => {
+          collection.draw(context);
+        });
+        this.particles.forEach(particle => {
+          particle.draw(context);
+        });
+        this.attacks.forEach(attack => {
+          attack.draw(context);
+        });
+        this.collisions.forEach(collision => {
+          collision.draw(context);
+        });
+        this.UI.draw(context);
+        this.floatingMessages.forEach(message => {
+          message.draw(context);
+        });
+
+        this.UI.drawPauseScreen(context);
+        this.resumeButton.draw(context);
+        this.startButton.draw(context);
+        this.introButton.draw(context);
+
+        return;
       case 'gameOver':
         this.UI.drawGameOverScreen(context);
         this.startButton.draw(context);
         return;
       case 'playing':
+        this.pauseButton.draw(context);
+
         this.player.draw(context);
         this.enemies.forEach(enemy => {
           enemy.draw(context);
@@ -354,6 +410,14 @@ export default class Game {
     this.activeIntro = new IntroScene(this);
   }
 
+  startPause(): void {
+    this.state.screen = 'pause';
+  }
+
+  stopPause(): void {
+    this.state.screen = 'playing';
+  }
+
   handlePointerMove(x: number, y: number): void {
     this.pointerX = x;
     this.pointerY = y;
@@ -364,6 +428,16 @@ export default class Game {
     }
 
     if (this.state.screen === 'menu' || this.state.screen === "gameOver") {
+      this.startButton.handlePointerMove(x, y);
+      this.introButton.handlePointerMove(x, y);
+    }
+
+    if (this.state.screen === 'playing') {
+      this.pauseButton.handlePointerMove(x, y);
+    }
+
+    if (this.state.screen === 'pause') {
+      this.resumeButton.handlePointerMove(x, y);
       this.startButton.handlePointerMove(x, y);
       this.introButton.handlePointerMove(x, y);
     }
@@ -385,6 +459,16 @@ export default class Game {
         this.introButton.handlePointerDown(x, y);
       }
     }
+
+    if (this.state.screen === 'playing') {
+      this.pauseButton.handlePointerDown(x, y);
+    }
+
+    if (this.state.screen === 'pause') {
+      this.resumeButton.handlePointerDown(x, y);
+      this.startButton.handlePointerDown(x, y);
+      this.introButton.handlePointerDown(x, y);
+    }
   }
 
   isHoveringButton(): boolean {
@@ -394,6 +478,14 @@ export default class Game {
 
     if (this.state.screen === 'menu' || this.state.screen === "gameOver") {
       return this.startButton.isHovered() || this.introButton.isHovered();
+    }
+
+    if (this.state.screen === 'playing') {
+      return this.pauseButton.isHovered();
+    }
+
+    if (this.state.screen === 'pause') {
+      return this.resumeButton.isHovered() || this.startButton.isHovered() || this.introButton.isHovered();
     }
 
     return false;
