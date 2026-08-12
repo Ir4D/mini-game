@@ -119,7 +119,7 @@ export default class Game {
       enemyInterval: 3000,
       collectibleInterval: 3000,
       attackCooldown: 3000,
-      win: 2,
+      win: 5,
       maxParticles: 50,
       maxEnemies: 4,
       fontColor: '#49351f',
@@ -402,6 +402,30 @@ export default class Game {
 
   stopPause(): void {
     this.state.screen = 'playing';
+  }
+
+  handleEnter(): void {
+    switch (this.state.screen) {
+      case 'menu':
+        this.startButton.activate();
+        break;
+
+      case 'gameOver':
+        this.startButton.activate();
+        break;
+
+      case 'pause':
+        this.resumeButton.activate();
+        break;
+    }
+  }
+
+  handleEscape(): void {
+    if (this.state.screen === 'playing') {
+      this.pauseButton.activate();
+    } else if (this.state.screen === 'pause') {
+      this.resumeButton.activate();
+    }
   }
 
   handlePointerMove(x: number, y: number): void {

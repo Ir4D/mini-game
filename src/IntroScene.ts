@@ -271,7 +271,7 @@ export default class IntroScene {
       { key: '←', text: 'Move back' },
       { key: 'Space', text: 'Jump' },
       { key: '↓', text: 'Stop' },
-      { key: 'Enter', text: 'Attack' },
+      { key: 'Ctrl', text: 'Attack' },
     ];
 
     const columns = 2;

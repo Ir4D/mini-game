@@ -48,7 +48,7 @@ export class Standing extends State {
   handleInput(input: string[]): void {
     if (input.includes('ArrowLeft') || input.includes('ArrowRight')) {
       this.game.player.setState(states.WALKING, 1);
-    } else if (input.includes('Enter') && this.game.attackReady) {
+    } else if (input.includes('Control') && this.game.attackReady) {
       this.game.player.setState(states.ATTACK, 1);
     } else if (input.includes('ArrowUp') || input.includes(' ')) {
       this.game.player.setState(states.JUMPING, 1);
@@ -74,7 +74,7 @@ export class Walking extends State {
       this.game.player.setState(states.STANDING, 0);
     } else if (input.includes('ArrowUp') || input.includes(' ')) {
       this.game.player.setState(states.JUMPING, 1);
-    } else if (input.includes('Enter') && this.game.attackReady) {
+    } else if (input.includes('Control') && this.game.attackReady) {
       this.game.player.setState(states.ATTACK, 1);
     }
   }
@@ -98,7 +98,7 @@ export class Jumping extends State {
   handleInput(input: string[]): void {
     if (this.game.player.velocityY > 0) {
       this.game.player.setState(states.FALLING, 1);
-    } else if (input.includes('Enter') && this.game.attackReady) {
+    } else if (input.includes('Control') && this.game.attackReady) {
       this.game.player.setState(states.ATTACK, 1);
     } else if (this.game.player.jumpKeyJustPressed && this.game.player.jumpCount < this.game.player.maxJumps) {
       this.game.player.setState(states.JUMPING, 1);
@@ -120,7 +120,7 @@ export class Falling extends State {
   handleInput(input: string[]): void {
     if (this.game.player.onGround()) {
       this.game.player.setState(states.WALKING, 1);
-    } else if (input.includes('Enter') && this.game.attackReady) {
+    } else if (input.includes('Control') && this.game.attackReady) {
       this.game.player.setState(states.ATTACK, 1);
     } else if (this.game.player.jumpKeyJustPressed && this.game.player.jumpCount < this.game.player.maxJumps) {
       this.game.player.setState(states.JUMPING, 1);
@@ -141,12 +141,12 @@ export class Rolling extends State {
 
   handleInput(input: string[]): void {
     this.game.particles.unshift(new Fire(this.game, this.game.player.positionX + this.game.player.width * 0.5, this.game.player.positionY + this.game.player.height * 0.5));
-    if (!input.includes('Enter') && this.game.player.onGround()) {
+    if (!input.includes('Control') && this.game.player.onGround()) {
       this.game.player.setState(states.WALKING, 1);
-    } else if (!input.includes('Enter') && !this.game.player.onGround()) {
+    } else if (!input.includes('Control') && !this.game.player.onGround()) {
       this.game.player.setState(states.FALLING, 1);
-    } else if ( input.includes('Enter') && input.includes('ArrowUp') && this.game.player.onGround() || 
-                input.includes('Enter') && input.includes(' ') && this.game.player.onGround()
+    } else if ( input.includes('Control') && input.includes('ArrowUp') && this.game.player.onGround() || 
+                input.includes('Control') && input.includes(' ') && this.game.player.onGround()
               ) {
       this.game.player.velocityY -= 8;
     }
@@ -186,12 +186,12 @@ export class Attack extends State {
   }
   
   handleInput(input: string[]): void {
-    if (!input.includes('Enter') && this.game.player.onGround()) {
+    if (!input.includes('Control') && this.game.player.onGround()) {
       this.game.player.setState(states.WALKING, 1);
-    } else if (!input.includes('Enter') && !this.game.player.onGround()) {
+    } else if (!input.includes('Control') && !this.game.player.onGround()) {
       this.game.player.setState(states.FALLING, 1);
-      } else if ( input.includes('Enter') && input.includes('ArrowUp') && this.game.player.onGround() || 
-                input.includes('Enter') && input.includes(' ') && this.game.player.onGround()
+      } else if ( input.includes('Control') && input.includes('ArrowUp') && this.game.player.onGround() || 
+                input.includes('Control') && input.includes(' ') && this.game.player.onGround()
               ) {
       this.game.player.velocityY -= 8;
     }

@@ -125,6 +125,10 @@ export default class Button {
     this.y = y;
   }
 
+  activate(): void {
+    this.onClick?.();
+  }
+
   handlePointerMove(x: number, y: number): void {
     this.hovered = this.isClicked(x, y);
     if (!this.hovered) {
@@ -140,7 +144,7 @@ export default class Button {
     }
 
     this.pressed = true;
-    this.onClick?.();
+    this.activate();
     return true;
   }
 

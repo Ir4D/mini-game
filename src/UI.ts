@@ -192,7 +192,7 @@ export class UI {
       if (index === 0) {
         context.fillStyle = 'rgba(255, 215, 90, 0.35)';
       } else if (index === 1) {
-        context.fillStyle = 'rgba(210, 210, 210, 0.35)';
+        context.fillStyle = 'rgba(192, 192, 192, 0.73)';
       } else if (index === 2) {
         context.fillStyle = 'rgba(205, 140, 85, 0.30)';
       } else {
