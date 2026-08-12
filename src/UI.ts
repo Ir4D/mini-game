@@ -139,10 +139,104 @@ export class UI {
     context.font = 'bold 42px Nunito';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
-    context.fillText(this.game.gameWon ? 'You Won!' : 'Game Over', this.game.width * 0.5, this.game.height * 0.33);
+    context.fillText(this.game.gameWon ? 'You Won!' : 'Game Over', this.game.width * 0.5, this.game.height * 0.1);
     context.font = 'bold 24px Nunito';
-    context.fillText(this.game.gameWon ? 'You helped the duckling find the way home!' : 'You lost all your lives...', this.game.width * 0.5, this.game.height * 0.42);
-    context.fillText(`Score: ${this.game.score}`, this.game.width * 0.5, this.game.height * 0.48);
+    context.fillText(this.game.gameWon ? `Your current score: ${this.game.score} and time: ${(this.game.time * 0.001).toFixed(1)}` : 'You lost all your lives...', this.game.width * 0.5, this.game.height * 0.17);
+    context.restore();
+
+    // best runs
+    context.save();
+    const panelWidth = 500;
+    const panelHeight = 260;
+    const panelX = this.game.width * 0.5 - panelWidth * 0.5;
+    const panelY = this.game.height * 0.24;
+    context.fillStyle = 'rgba(255, 248, 232, 0.94)';
+    context.strokeStyle = '#6b4b2a';
+    context.lineWidth = 4;
+    context.beginPath();
+    context.roundRect(panelX, panelY, panelWidth, panelHeight, 20);
+    context.fill();
+    context.stroke();
+    context.fillStyle = '#49351f';
+    context.font = 'bold 25px Nunito';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillText('Best Runs:', this.game.width * 0.5, panelY + 30);
+
+    context.font = 'bold 13px Nunito';
+    context.fillStyle = 'rgba(73, 53, 31, 0.7)';
+    context.textAlign = 'left';
+    context.fillText('SCORE', panelX + 84, panelY + 57);
+    context.textAlign = 'right';
+    context.fillText('TIME', panelX + panelWidth - 48, panelY + 57);
+
+    const listStartY = panelY + 80;
+    const rowHeight = 35;
+    const rowWidth = panelWidth - 50;
+    const rowX = panelX + 25;
+
+    this.game.gameStorage.topGames.forEach((game, index) => {
+      const y = listStartY + index * rowHeight;
+
+      const isCurrentGame = game.score === this.game.score && game.time === this.game.time;
+      if (isCurrentGame) {
+        context.strokeStyle = '#f2b84b';
+        context.lineWidth = 3;
+        context.beginPath();
+        context.roundRect(rowX, y - 14, rowWidth, 28, 9);
+        context.stroke();
+      }
+
+      // row background
+      context.save();
+      if (index === 0) {
+        context.fillStyle = 'rgba(255, 215, 90, 0.35)';
+      } else if (index === 1) {
+        context.fillStyle = 'rgba(210, 210, 210, 0.35)';
+      } else if (index === 2) {
+        context.fillStyle = 'rgba(205, 140, 85, 0.30)';
+      } else {
+        context.fillStyle = 'rgba(107, 75, 42, 0.07)';
+      }
+
+      context.beginPath();
+      context.roundRect(rowX, y - 16, rowWidth, 32, 10);
+      context.fill();
+
+      // place badge
+      const badgeX = rowX + 22;
+      context.fillStyle =
+        index === 0 ? '#d4a017' : index === 1
+          ? '#9e9e9e' : index === 2
+          ? '#b87333'
+          : '#6b4b2a';
+
+      context.beginPath();
+      context.arc(badgeX, y, 11, 0, Math.PI * 2);
+      context.fill();
+
+      // rank number
+      context.fillStyle = '#fff8e8';
+      context.font = 'bold 16px Nunito';
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+
+      context.fillText(String(index + 1), badgeX, y + 1);
+
+      // score
+      context.fillStyle = '#49351f';
+      context.font = 'bold 17px Nunito';
+      context.textAlign = 'left';
+      context.fillText(`${game.score} points`, rowX + 60, y);
+
+      // time
+      context.font = '16px Nunito';
+      context.textAlign = 'right';
+      context.fillText(`${(game.time * 0.001).toFixed(1)}s`, rowX + rowWidth - 20, y);
+
+      context.restore();
+    });
+
     context.restore();
   }
 

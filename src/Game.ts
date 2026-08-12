@@ -11,6 +11,7 @@ import Button from "./Button";
 import { Spawner } from "./Spawner";
 import { UI } from "./UI";
 import IntroScene from "./IntroScene";
+import GameStorage from "./GameStorage";
 
 interface GameOptions {
   width: number;
@@ -71,6 +72,7 @@ export default class Game {
   state: GameState;
   private activeIntro: IntroScene | null = null;
   animationTime: number;
+  gameStorage: GameStorage;
 
   get speed(): number { return this.state.speed; }
   set speed(value: number) { this.state.speed = value; }
@@ -117,7 +119,7 @@ export default class Game {
       enemyInterval: 3000,
       collectibleInterval: 3000,
       attackCooldown: 3000,
-      win: 5,
+      win: 2,
       maxParticles: 50,
       maxEnemies: 4,
       fontColor: '#49351f',
@@ -126,6 +128,12 @@ export default class Game {
     this.player = new Player(this);
     this.input = new InputHandler(this);
     this.UI = new UI(this);
+    this.startButton = new Button(this, { label: "Start Game", onClick: () => this.startGame() });
+    this.introButton = new Button(this, { label: "Intro", onClick: () => this.startIntro() });
+    this.pauseButton = new Button(this, { width: 80, height: 40, label: "Pause", onClick: () => this.startPause(), color: "secondary", size: "compact" });
+    this.resumeButton = new Button(this, { label: "Resume", onClick: () => this.stopPause(), color: "secondary" });
+    this.spawner = new Spawner(this);
+    this.gameStorage = new GameStorage(this);
     this.enemies = [];
     this.particles = [];
     this.collisions = [];
@@ -133,28 +141,6 @@ export default class Game {
     this.collectibles = [];
     this.collections = [];
     this.floatingMessages = [];
-    this.startButton = new Button(this, {
-      label: "Start Game",
-      onClick: () => this.startGame(),
-    });
-    this.introButton = new Button(this, {
-      label: "Intro",
-      onClick: () => this.startIntro(),
-    });
-    this.pauseButton = new Button(this, {
-      width: 80,
-      height: 40,
-      label: "Pause",
-      onClick: () => this.startPause(),
-      color: "secondary",
-      size: "compact"
-    });
-    this.resumeButton = new Button(this, {
-      label: "Resume",
-      onClick: () => this.stopPause(),
-      color: "secondary"
-    });
-    this.spawner = new Spawner(this);
     this.pointerX = 0;
     this.pointerY = 0;
     this.state = this.createInitialState();
@@ -202,7 +188,7 @@ export default class Game {
         this.introButton.handlePointerMove(this.pointerX, this.pointerY);
         return;
       case 'gameOver':
-        this.startButton.setLayout("Start again", this.width * 0.5 - this.startButton.buttonWidth * 0.5, this.height * 0.72);
+        this.startButton.setLayout("Start again", this.width * 0.5 - this.startButton.buttonWidth * 0.5, this.height * 0.8);
         this.startButton.handlePointerMove(this.pointerX, this.pointerY);
         return;
       case 'playing':
@@ -515,6 +501,7 @@ export default class Game {
         );
         if (this.state.breadcrumbs >= this.config.win) {
           this.state.gameWon = true;
+          this.gameStorage.update(this.time, this.score);
           this.state.screen = "gameOver";
         }
       }
