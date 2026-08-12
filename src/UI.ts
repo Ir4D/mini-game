@@ -26,91 +26,117 @@ export class UI {
       return;
     }
 
+    const panelX = 16;
+    const panelY = 16;
+    const panelWidth = 130;
+    const panelHeight = 142;
+
     context.save();
-    context.shadowOffsetX = 1;
-    context.shadowOffsetY = 1;
-    context.shadowColor = 'rgb(179, 178, 178)';
-    context.shadowBlur = 0;
-    context.font = this.fontSize + 'px ' + this.fontFamily;
-    context.textAlign = 'left';
-    context.fillStyle = this.game.fontColor;
+
+    // panel background
+    context.fillStyle ="rgba(255, 245, 222, 0.58)";
+    context.strokeStyle ="rgba(107, 75, 42, 0.85)";
+    context.lineWidth = 3;
+    context.beginPath();
+    context.roundRect(panelX, panelY, panelWidth, panelHeight, 16);
+    context.fill();
+    context.stroke();
+    const leftX = panelX + 12;
+    const rightX = panelX + panelWidth - 12;
 
     // score
-    context.fillText('Score: ' + this.game.score, 20, 50);
-    // breadcrumbs
-    context.font = this.fontSize * 0.8 + 'px ' + this.fontFamily;
-    context.fillText('Bread: ' + this.game.breadcrumbs + '/' + this.game.win, 20, 80)
-    // timer
-    context.fillText('Time: ' + (this.game.time * 0.001).toFixed(1) + 's', 20, 110);
+    this.drawHudStatRow(context, "SCORE", String(this.game.score), leftX, rightX, panelY + 20);
+
+    // bread
+    this.drawHudStatRow(context, "BREAD", `${this.game.breadcrumbs} / ${this.game.win}`, leftX, rightX, panelY + 42);
+
+    // time
+    this.drawHudStatRow(context, "TIME", `${(this.game.time * 0.001).toFixed(1)}s`, leftX, rightX, panelY + 64);
+
     // lives
-    for (let i = 0; i < this.game.lives; i++) {
-      context.drawImage(this.livesImage, 30 * i + 20, 120, 25, 25);
-    }
+    this.drawHudLives(context, leftX, panelY + 79);
 
-    // attacks: prominent icon + ring cooldown indicator
-    const iconSize = 48;
-    const iconX = 20;
-    const iconY = 160;
-    // icon background circle
-    const centerX = iconX + iconSize * 0.5;
-    const centerY = iconY + iconSize * 0.5;
-    const radius = iconSize * 0.5 + 6;
-    context.save();
-    context.globalAlpha = 0.95;
-    // pulsing scale when ready
-    const pulseScale = this.game.attackReady ? 1 + 0.08 * Math.sin(this.game.time * 0.01) : 1;
-    const drawW = iconSize * pulseScale;
-    const drawH = iconSize * pulseScale;
-    const drawX = centerX - drawW * 0.5;
-    const drawY = centerY - drawH * 0.5;
-
-    if (
-      this.attackIconElem &&
-      this.attackIconElem.complete &&
-      this.attackIconElem.naturalWidth > 0
-    ) {
-      context.drawImage(
-        this.attackIconElem,
-        drawX,
-        drawY,
-        drawW,
-        drawH
-      );
-    }
-    // base ring
-    context.lineWidth = 6;
-    context.strokeStyle = 'rgba(0,0,0,0.25)';
+    // divider 
+    const dividerY = panelY + 105;
+    context.strokeStyle = "rgba(107, 75, 42, 0.18)";
+    context.lineWidth = 1.5;
     context.beginPath();
-    context.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    context.moveTo(panelX + 10, dividerY);
+    context.lineTo(panelX + panelWidth - 10, dividerY);
     context.stroke();
-    if (this.game.attackReady) {
-      // full green ring with glow
-      context.strokeStyle = 'limegreen';
-      context.beginPath();
-      context.arc(centerX, centerY, radius, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2);
-      context.stroke();
-      context.fillStyle = 'rgba(0,255,0,0.10)';
-      context.beginPath();
-      context.arc(centerX, centerY, radius + 8, 0, Math.PI * 2);
-      context.fill();
-      context.fillStyle = this.game.fontColor;
-      context.font = this.fontSize * 0.7 + 'px ' + this.fontFamily;
-      context.textAlign = 'center';
-      context.fillText('Ready', centerX, iconY + iconSize + 18);
-    } else {
-      const pct = Math.min(1, this.game.attackTimer / this.game.attackCooldown);
-      const endAngle = -Math.PI / 2 + pct * Math.PI * 2;
-      context.strokeStyle = 'orange';
-      context.beginPath();
-      context.arc(centerX, centerY, radius, -Math.PI / 2, endAngle);
-      context.stroke();
-      const remaining = Math.max(0, (this.game.attackCooldown - this.game.attackTimer) * 0.001).toFixed(1);
-      context.fillStyle = this.game.fontColor;
-      context.font = this.fontSize * 0.7 + 'px ' + this.fontFamily;
-      context.textAlign = 'center';
-      context.fillText(remaining + 's', centerX, iconY + iconSize + 18);
+
+    // attack
+    this.drawAttackHud(context, leftX, panelY + 111, panelWidth - 24);
+
+    context.restore();
+  }
+    
+  private drawHudStatRow(context: CanvasRenderingContext2D, label: string, value: string, labelX: number, valueX: number, y: number): void {
+    context.save();
+    context.textBaseline = "middle";
+
+    // label
+    context.fillStyle = "rgba(73, 53, 31, 0.62)";
+    context.font = "bold 11px Nunito";
+    context.textAlign = "left";
+    context.fillText(label, labelX, y);
+
+    // value
+    context.fillStyle = "#49351f";
+    context.font = "bold 17px Nunito";
+    context.textAlign = "right";
+    context.fillText(value, valueX, y);
+
+    context.restore();
+  }
+
+  private drawHudLives(context: CanvasRenderingContext2D, x: number, y: number): void {
+    const heartSize = 18;
+    const gap = 4;
+    context.save();
+    for (let i = 0; i < this.game.lives; i++) {
+      context.drawImage(this.livesImage, x + i * (heartSize + gap), y, heartSize, heartSize);
     }
     context.restore();
+  }
+
+  private drawAttackHud(context: CanvasRenderingContext2D, x: number, y: number, width: number): void {
+    const textX = x;
+    const textY = y;
+    const cooldownProgress = Math.min(1, this.game.attackTimer / this.game.attackCooldown);
+    const remaining = Math.max(0, ((this.game.attackCooldown - this.game.attackTimer) * 0.001));
+
+    context.save();
+    // status
+    context.fillStyle = "#49351f";
+    context.font ="bold 13px Nunito";
+    context.textAlign = "left";
+    context.textBaseline = "middle";
+
+    const status = this.game.attackReady ? "Ready" : `${remaining.toFixed(1)}s`;
+    context.fillText(status, textX, textY + 7);
+
+    // small helper text
+    context.fillStyle = "rgba(73, 53, 31, 0.55)";
+    context.font = "10px Nunito";
+    context.fillText("Attack", textX, textY + 18);
+
+    // cooldown bar
+    const barX = textX + 48;
+    const barY = textY + 8;
+    const barWidth = width - (barX - x);
+    const barHeight = 7;
+    context.fillStyle = "rgba(107, 75, 42, 0.16)";
+
+    context.beginPath();
+    context.roundRect(barX, barY, barWidth, barHeight, 4);
+    context.fill();
+    const fillProgress = this.game.attackReady ? 1 : cooldownProgress;
+    context.fillStyle = this.game.attackReady ? "#8fe946" : "#fbff1d";
+
+    context.beginPath();
+    context.roundRect(barX, barY, barWidth * fillProgress, barHeight, 4);
+    context.fill();
 
     context.restore();
   }

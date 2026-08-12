@@ -118,7 +118,7 @@ export default class Game {
       maxSpeed: 2,
       enemyInterval: 3000,
       collectibleInterval: 3000,
-      attackCooldown: 3000,
+      attackCooldown: 2000,
       win: 5,
       maxParticles: 50,
       maxEnemies: 4,
