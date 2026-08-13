@@ -1,7 +1,7 @@
 import Game from "./Game";
-import {getRequiredElement, getCanvasContext} from "./utils/dom";
+import { getRequiredElement, getCanvasContext } from "./utils/dom";
 
-window.addEventListener('load', function() {
+window.addEventListener("load", function () {
   const canvas = getRequiredElement("canvas", HTMLCanvasElement);
   const context = getCanvasContext(canvas);
 

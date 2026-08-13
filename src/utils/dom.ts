@@ -1,12 +1,12 @@
 export function getRequiredElement<T extends HTMLElement>(
   id: string,
-  elementType: new (...args: any[]) => T
+  elementType: new (...args: never[]) => T,
 ): T {
   const element = document.getElementById(id);
 
   if (!(element instanceof elementType)) {
     throw new Error(
-      `Element with id="${id}" was not found or has an invalid type`
+      `Element with id="${id}" was not found or has an invalid type`,
     );
   }
 
@@ -14,7 +14,7 @@ export function getRequiredElement<T extends HTMLElement>(
 }
 
 export function getCanvasContext(
-  canvas: HTMLCanvasElement
+  canvas: HTMLCanvasElement,
 ): CanvasRenderingContext2D {
   const context = canvas.getContext("2d");
 

@@ -39,7 +39,7 @@ export class Dust extends Particle {
     this.positionY = positionY;
     this.speedX = Math.random();
     this.speedY = Math.random();
-    this.color = 'rgba(66, 66, 66, 0.2)';
+    this.color = "rgba(66, 66, 66, 0.2)";
   }
 
   draw(context: CanvasRenderingContext2D): void {
@@ -82,7 +82,13 @@ export class Fire extends Particle {
     context.save();
     context.translate(this.positionX, this.positionY);
     context.rotate(this.angle);
-    context.drawImage(this.image, -this.size * 0.5, -this.size * 0.5, this.size, this.size);
+    context.drawImage(
+      this.image,
+      -this.size * 0.5,
+      -this.size * 0.5,
+      this.size,
+      this.size,
+    );
     context.restore();
   }
 }

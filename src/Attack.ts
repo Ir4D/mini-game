@@ -20,7 +20,10 @@ export class Attack {
     this.width = 64;
     this.height = 33;
     this.positionX = this.game.player.positionX + this.game.player.width * 1.1;
-    this.positionY = this.game.player.positionY + this.game.player.height * 0.5 - this.height * 0.5;
+    this.positionY =
+      this.game.player.positionY +
+      this.game.player.height * 0.5 -
+      this.height * 0.5;
     this.frameX = 0;
     this.maxFrame = 8;
     this.fps = 20;
@@ -40,6 +43,16 @@ export class Attack {
   }
 
   draw(context: CanvasRenderingContext2D): void {
-    context.drawImage(this.image, this.frameX * this.width, 0, this.width, this.height, this.positionX, this.positionY, this.width, this.height);
+    context.drawImage(
+      this.image,
+      this.frameX * this.width,
+      0,
+      this.width,
+      this.height,
+      this.positionX,
+      this.positionY,
+      this.width,
+      this.height,
+    );
   }
 }

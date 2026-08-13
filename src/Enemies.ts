@@ -44,7 +44,17 @@ export abstract class Enemy {
   }
 
   draw(context: CanvasRenderingContext2D): void {
-    context.drawImage(this.image, this.frameX * this.width, 0, this.width, this.height, this.positionX, this.positionY, this.width, this.height);
+    context.drawImage(
+      this.image,
+      this.frameX * this.width,
+      0,
+      this.width,
+      this.height,
+      this.positionX,
+      this.positionY,
+      this.width,
+      this.height,
+    );
   }
 }
 

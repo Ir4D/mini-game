@@ -7,9 +7,9 @@ interface ButtonOptions {
   width?: number;
   height?: number;
   onClick?: () => void;
-  
-  color? : ButtonColor;
-  size? : ButtonSize;
+
+  color?: ButtonColor;
+  size?: ButtonSize;
 }
 
 type ButtonColor = "primary" | "secondary";
@@ -84,8 +84,12 @@ export default class Button {
   private readonly color: ButtonColor;
   private readonly size: ButtonSize;
 
-  get buttonWidth(): number { return this.width; }
-  get buttonHeight(): number { return this.height; }
+  get buttonWidth(): number {
+    return this.width;
+  }
+  get buttonHeight(): number {
+    return this.height;
+  }
 
   constructor(game: Game, options: ButtonOptions) {
     this.game = game;
@@ -151,7 +155,10 @@ export default class Button {
   draw(context: CanvasRenderingContext2D): void {
     const sizeStyle = BUTTON_SIZE_STYLES[this.size];
     const colorStyle = BUTTON_COLOR_STYLES[this.color];
-    const pulseScale = 1 + Math.sin(this.game.animationTime * sizeStyle.pulseSpeed) * sizeStyle.pulseAmount;
+    const pulseScale =
+      1 +
+      Math.sin(this.game.animationTime * sizeStyle.pulseSpeed) *
+        sizeStyle.pulseAmount;
     const hoverScale = this.hovered ? sizeStyle.hoverScale : 0;
     const pressScale = this.pressed ? sizeStyle.pressScale : 1;
     const finalScale = (pulseScale + hoverScale) * pressScale;
@@ -163,12 +170,29 @@ export default class Button {
     context.save();
     context.shadowColor = "rgba(0, 0, 0, 0.25)";
     context.shadowBlur = sizeStyle.shadowBlur;
-    context.fillStyle = this.pressed ? colorStyle.fillPressed : this.hovered ? colorStyle.fillHover : colorStyle.fill;
-    context.strokeStyle = this.pressed ? colorStyle.strokePressed : this.hovered ? colorStyle.strokeHover : colorStyle.stroke;
-    context.lineWidth = this.pressed ? sizeStyle.pressLineWidth : sizeStyle.lineWidth;
+    context.fillStyle = this.pressed
+      ? colorStyle.fillPressed
+      : this.hovered
+        ? colorStyle.fillHover
+        : colorStyle.fill;
+    context.strokeStyle = this.pressed
+      ? colorStyle.strokePressed
+      : this.hovered
+        ? colorStyle.strokeHover
+        : colorStyle.stroke;
+    context.lineWidth = this.pressed
+      ? sizeStyle.pressLineWidth
+      : sizeStyle.lineWidth;
 
     context.beginPath();
-    this.roundRectPath(context, drawX, drawY, scaledWidth, scaledHeight, sizeStyle.radius);
+    this.roundRectPath(
+      context,
+      drawX,
+      drawY,
+      scaledWidth,
+      scaledHeight,
+      sizeStyle.radius,
+    );
     context.fill();
     context.stroke();
     context.shadowBlur = 0;
@@ -176,19 +200,35 @@ export default class Button {
     context.font = `bold ${sizeStyle.fontSize}px Nunito`;
     context.textAlign = "center";
     context.textBaseline = "middle";
-    context.fillText(this.label, this.x + this.width * 0.5, this.y + this.height * 0.5);
+    context.fillText(
+      this.label,
+      this.x + this.width * 0.5,
+      this.y + this.height * 0.5,
+    );
     context.restore();
   }
 
   isClicked(x: number, y: number): boolean {
-    return x >= this.x && x <= this.x + this.width && y >= this.y && y <= this.y + this.height;
+    return (
+      x >= this.x &&
+      x <= this.x + this.width &&
+      y >= this.y &&
+      y <= this.y + this.height
+    );
   }
 
   isHovered(): boolean {
     return this.hovered;
   }
 
-  private roundRectPath(context: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number): void {
+  private roundRectPath(
+    context: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    radius: number,
+  ): void {
     const r = Math.min(radius, width * 0.5, height * 0.5);
     context.moveTo(x + r, y);
     context.arcTo(x + width, y, x + width, y + height, r);

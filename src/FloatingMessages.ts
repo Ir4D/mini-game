@@ -7,14 +7,20 @@ export class FloatingMessages {
   markedForDeletion: boolean;
   timer: number;
 
-  constructor(value: string, positionX: number, positionY: number, targetX: number, targetY: number) {
+  constructor(
+    value: string,
+    positionX: number,
+    positionY: number,
+    targetX: number,
+    targetY: number,
+  ) {
     this.value = value;
     this.positionX = positionX;
     this.positionY = positionY;
     this.targetX = targetX;
     this.targetY = targetY;
     this.markedForDeletion = false;
-    this.timer = 0
+    this.timer = 0;
   }
 
   update(): void {
@@ -25,10 +31,10 @@ export class FloatingMessages {
   }
 
   draw(context: CanvasRenderingContext2D): void {
-    context.font = '20px Nunito';
-    context.fillStyle = 'white';
+    context.font = "20px Nunito";
+    context.fillStyle = "white";
     context.fillText(this.value, this.positionX, this.positionY);
-    context.fillStyle = 'black';
+    context.fillStyle = "black";
     context.fillText(this.value, this.positionX - 1, this.positionY - 1);
   }
 }

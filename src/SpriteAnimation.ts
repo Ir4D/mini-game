@@ -25,13 +25,14 @@ export class SpriteAnimation {
     maxFrame: number,
     positionX: number,
     positionY: number,
-    sizeModifier?: number
+    sizeModifier?: number,
   ) {
     this.game = game;
     this.image = document.getElementById(imageId) as HTMLImageElement;
     this.spriteWidth = spriteWidth;
     this.spriteHeight = spriteHeight;
-    this.sizeModifier = typeof sizeModifier === 'number' ? sizeModifier : Math.random() + 0.5;
+    this.sizeModifier =
+      typeof sizeModifier === "number" ? sizeModifier : Math.random() + 0.5;
     this.width = this.spriteWidth * this.sizeModifier;
     this.height = this.spriteHeight * this.sizeModifier;
     this.positionX = positionX - this.width * 0.5;
@@ -54,7 +55,7 @@ export class SpriteAnimation {
       this.positionX,
       this.positionY,
       this.width,
-      this.height
+      this.height,
     );
   }
 
@@ -71,18 +72,18 @@ export class SpriteAnimation {
 
 export class CollisionAnimation extends SpriteAnimation {
   constructor(game: Game, positionX: number, positionY: number) {
-    super(game, 'collisionAnimation', 100, 90, 4, positionX, positionY);
+    super(game, "collisionAnimation", 100, 90, 4, positionX, positionY);
   }
 }
 
 export class RemovalAnimation extends SpriteAnimation {
   constructor(game: Game, positionX: number, positionY: number) {
-    super(game, 'steam', 64, 46, 8, positionX, positionY, 2);
+    super(game, "steam", 64, 46, 8, positionX, positionY, 2);
   }
 }
 
 export class CollectionAnimation extends SpriteAnimation {
   constructor(game: Game, positionX: number, positionY: number) {
-    super(game, 'stars', 64, 65, 7, positionX, positionY, 1);
+    super(game, "stars", 64, 65, 7, positionX, positionY, 1);
   }
 }
