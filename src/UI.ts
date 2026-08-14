@@ -70,7 +70,7 @@ export class UI {
     this.drawHudStatRow(
       context,
       "TIME",
-      `${(this.game.time * 0.001).toFixed(1)}s`,
+      this.formatTime(this.game.time),
       leftX,
       rightX,
       panelY + 64,
@@ -113,7 +113,7 @@ export class UI {
 
     // value
     context.fillStyle = "#49351f";
-    context.font = "bold 17px Nunito";
+    context.font = "bold 15px Nunito";
     context.textAlign = "right";
     context.fillText(value, valueX, y);
 
@@ -224,7 +224,7 @@ export class UI {
     context.font = "bold 24px Nunito";
     context.fillText(
       this.game.gameWon
-        ? `Your current score: ${this.game.score} and time: ${(this.game.time * 0.001).toFixed(1)}`
+        ? `Your current score: ${this.game.score} and time: ${this.formatTime(this.game.time)}`
         : "You lost all your lives...",
       this.game.width * 0.5,
       this.game.height * 0.17,
@@ -324,7 +324,7 @@ export class UI {
       context.font = "16px Nunito";
       context.textAlign = "right";
       context.fillText(
-        `${(game.time * 0.001).toFixed(1)}s`,
+        this.formatTime(this.game.time),
         rowX + rowWidth - 20,
         y,
       );
@@ -345,5 +345,23 @@ export class UI {
     context.textBaseline = "middle";
     context.fillText("Pause", this.game.width * 0.5, this.game.height * 0.25);
     context.restore();
+  }
+
+  private formatTime(time: number): string {
+    const totalSeconds = time * 0.001;
+
+    if (totalSeconds < 60) {
+      return `${totalSeconds.toFixed(1)}s`;
+    }
+
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m ${seconds.toFixed(1)}s`;
+    }
+
+    return `${minutes}m ${seconds.toFixed(1)}s`;
   }
 }

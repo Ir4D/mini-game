@@ -642,7 +642,7 @@ export default class Game {
     return false;
   }
 
-  private isColliding(
+  isColliding(
     a: { positionX: number; positionY: number; width: number; height: number },
     b: { positionX: number; positionY: number; width: number; height: number },
   ): boolean {

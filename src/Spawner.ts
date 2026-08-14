@@ -20,8 +20,21 @@ export class Spawner {
   }
 
   spawnCollectible(): void {
-    if (this.game.speed > 0 && Math.random() < 0.5) {
-      this.game.collectibles.push(new Breadcrumb(this.game));
+    if (this.game.speed <= 0  || Math.random() > 0.5) return;
+
+    const breadcrumb = new Breadcrumb(this.game);
+
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const overlapsStandingEnemy = this.game.enemies.some((enemy) => 
+        enemy instanceof StandingEnemy && this.game.isColliding(breadcrumb, enemy),
+      );
+
+      if (!overlapsStandingEnemy) {
+        this.game.collectibles.push(breadcrumb);
+        return;
+      }
+
+      breadcrumb.positionY = Math.random() * (this.game.ground - breadcrumb.height);
     }
   }
 }
